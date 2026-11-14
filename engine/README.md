@@ -49,3 +49,25 @@ python -m unittest discover -s engine -v
 ```
 
 The synthetic CSV tests use the system temporary directory. Set `TEMP` and `TMP` to a writable directory if your local environment restricts the default location.
+
+## Postflight trajectories
+
+Pass the A2 results to A3. For a comparison chart, select one panel and biomarker. The returned series keep each crew member's baseline, chronological visits, and source CSV coordinates.
+
+```python
+import json
+
+from engine.biomarker_analysis import analyze_postflight
+from engine.nasa_ingestion import load_osd575
+from engine.trajectory_analysis import analyze_trajectories, compare_astronauts, serialize_trajectory
+
+trajectories = analyze_trajectories(analyze_postflight(load_osd575()))
+glucose = compare_astronauts(trajectories, panel="cmp", biomarker="glucose")
+print(json.dumps([serialize_trajectory(series) for series in glucose], allow_nan=False))
+```
+
+Change and distance use the personal baseline from A2. A negative `first_to_last_distance_change` means the last valid visit was closer than the first. `mixed` covers reversals in distance movement and sequences with both movement and ties. `crossed_baseline` requires valid readings on both sides. `measurement_direction_reversed` tracks increases and decreases in the observed values and is null until at least two comparable steps exist.
+
+Missing and invalid cells stay in `visits` with separate counts. An expected visit with no row appears in `absent_visit_days`. Consecutive valid readings use their actual day offsets, including across gaps. Two valid readings carry a limited-evidence note. The default expected postflight days are 1, 45, 82, and 194.
+
+JSON uses exact decimal strings and null for unavailable fields. Interpret each series on its original assay scale. The measurements describe changes across discrete serum visits.
