@@ -55,3 +55,22 @@ The event requires a description of how AI tools were used. Every agent session 
   - Not verified on macOS, on Linux, or with Python 3.11–3.13.
   - The known-vulnerability check (pip-audit) and linting (ruff) have not been run.
 - **Human review:** None yet.
+
+## 2026-11-14 · Member D · Claude Code · Backend CI job
+
+- **Task:** Add a `backend` job to the CI workflow. On Linux, with Python 3.11 and 3.14, it installs `api/requirements-dev.txt`, runs the tests, and audits the dependencies with pip-audit.
+- **Files changed:**
+  - `.github/workflows/ci.yml` (new `backend` job)
+  - `api/README.md` (CI and vulnerability notes)
+  - `docs/AI_USAGE.md` (this entry)
+- **New tool:** pip-audit 2.10.1 (Apache-2.0, maintained by PyPA). CI installs it for the audit step only. It is not an app dependency.
+- **Local checks:** Run on Windows with Python 3.14.3.
+  - `python -m pip_audit -r requirements-dev.txt`: no known vulnerabilities in 22 resolved packages (exit 0).
+  - Negative test: a throwaway requirements file pinning `requests==2.19.0`, checked without installing anything, made pip-audit exit 1.
+  - `python -m pytest`: 10 passed, with 1 warning.
+  - Text checks on the workflow file: no tabs, LF line endings, all 4 actions pinned to full commit SHAs, and no `|| true` or `continue-on-error`.
+- **Still pending:**
+  - The backend job has not run on GitHub Actions yet, so Linux and Python 3.11 are still unverified.
+  - Python 3.12 and 3.13 are not in the test matrix.
+  - Python linting (ruff) is not set up.
+- **Human review:** None yet.
