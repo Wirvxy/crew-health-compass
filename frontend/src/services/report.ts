@@ -1,6 +1,7 @@
+import type { MuscleReportEntry } from '../components/MuscleReport'
 import type { Assessment, CheckIn } from '../types/assessment'
 // A small text-only PDF writer using the standard Helvetica font; no runtime dependency.
-export function downloadReport(assessment: Assessment, submission?: CheckIn) {
+export function downloadReport(assessment: Assessment, submission?: CheckIn, muscleReports: MuscleReportEntry[] = []) {
   const lines = ['CREW HEALTH COMPASS', `${assessment.astronautId} / ${assessment.timepoint}`, 'Research prototype, not a diagnostic device.', 'Status classifications are simulated API fixtures; assessment rules are pending.', '']
   for (const system of assessment.systems) {
     lines.push(system.name, `Status: ${system.status} (${system.statusProvenance})`, system.reason, `Next step: ${system.action}`)
@@ -9,6 +10,7 @@ export function downloadReport(assessment: Assessment, submission?: CheckIn) {
     lines.push('')
   }
   if (submission) lines.push('Latest daily check-in', submission.timestamp, `Provenance: ${submission.provenance}`, ...Object.entries(submission.values).map(([k, v]) => `${k}: ${v}`), 'Clinical assessment pending. Not transmitted.')
+  for (const r of muscleReports) lines.push('User-reported muscle location', r.muscleName + ' / ' + r.view, `Intensity ${r.severity}/10; ${r.kind}; ${r.onset}`, r.notes, 'Provenance: user; ' + r.timestamp, 'Not inferred from assay measurements.');
   lines.push('Baseline: median of available L-92, L-44 and L-3 values.', 'https://osdr.nasa.gov/bio/repo/data/studies/OSD-575')
   const wrapped = lines.flatMap(line => {
     const ascii = line.replace(/[^\x20-\x7e]/g, '-')
