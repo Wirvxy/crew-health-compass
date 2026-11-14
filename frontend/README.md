@@ -25,7 +25,7 @@ npm run build
 - `src/types`: types matching the shared contracts
 - `public`: static files
 
-Add API models after the team supplies its contracts. No health rules or sample medical values are included.
+Dataset response models follow the documented backend serializers. Daily check-in contracts and clinical rules are still pending.
 
 ## Atmospheric dashboard
 
@@ -34,7 +34,7 @@ The approved atmospheric prototype is implemented as React components:
 - `src/pages/Dashboard.tsx`: shared view state, role presentation and simulation controls
 - `src/components/TopBar.tsx`: product, crew, mission context and simulation label
 - `src/components/DailyCheckIn.tsx`: session-local form and validation
-- `src/components/BodyMap.tsx`: SVG system map and mission visits
+- `src/components/BodyMap.tsx`: 3D body viewer, system cards and mission visits
 - `src/components/SystemDetail.tsx` and `TrendChart.tsx`: evidence and trends
 - `src/services/assessment.ts`: mock-response loader and presentation adapter
 - `src/services/report.ts`: local text-only PDF export
@@ -44,15 +44,18 @@ The approved atmospheric prototype is implemented as React components:
 
 No dependencies were added. ESLint is not configured in this starter; `npm run build` checks TypeScript and builds the application.
 
-## Segmented muscle map
+## Body visualization
 
-The atmospheric dashboard now uses 89 source-defined SVG regions from Body Muscles by Ivan Vulovic (Apache-2.0). Front/back geometry is in `src/data/muscles.ts`; the displayed path is also its click target. `BodyMap.tsx` handles selection and `MuscleReport.tsx` handles user-entered intensity, description and onset. Copyright and licence files are in `public/licenses/`.
+The active body viewer is a neutral, rotatable 3D astronaut. Earlier segmented-muscle assets and their Apache-2.0 licence files remain in the repository but are not exposed by the current viewer. No dataset laboratory classification drives organ colors.
 
-Muscle reports are kept per crew in tab-session memory, support local JSON export, and are included in the crew PDF. Saving the same muscle/view updates that report. They are not inferred from serum measurements or submitted to the backend. Clinical statuses remain source-labelled mock fixtures.
+## NASA dataset integration (PR #13 response shapes)
+The default **NASA laboratory data** workspace calls all six endpoints through `src/services/dataset.ts`. Consumed fields are validated in `datasetResponse.ts`; the complete raw response is retained. Trajectory and comparison response shapes in `docs/osd575-api.md` are accepted by the frontend. These remain provisional shared contracts; no backend or shared-contract files were changed.
 
-### Proposed OSD-575 API preparation
-`src/services/dataset.ts` owns all proposed dataset request construction. It is not called automatically until tested response examples and the launch URL arrive. Set the origin through `createDatasetService(origin)` at integration; empty origin means same-origin. Requests support AbortSignal. HTTP 404/422/503 are typed errors; network and cancellation failures propagate to the caller. No failure silently falls back to mock data.
+Run the backend from the repository root as documented by D, then run `npm run dev` in frontend. Vite proxies `/datasets` to `http://127.0.0.1:8000`. If that port is unavailable, run uvicorn with `--port 8015` and set `DATASET_PROXY_TARGET=http://127.0.0.1:8015` in an ignored `frontend/.env.local`. Production hosting must route `/datasets` to the API on the same origin; this dev proxy is not a deployment configuration.
 
-Responses remain `unknown`: the final adapter must validate the tested backend shape and preserve original decimal strings/nulls, units, provenance, baseline status and laboratory status. `chartNumber` is for chart coordinates only. `DatasetComparisonView` is a frontend display model, not an API contract. The visible preview uses the existing local median baseline and labels API laboratory comparison as pending. Do not substitute the proposed backend baseline calculation with this local method.
+All visits supplied by the API, including R+194, are exposed. The dataset UI uses A's **preflight average**, never the old mock median. Decimal strings and nulls are retained; numbers are converted only for charting/display. Raw responses, source CSV row/column, units, baseline status, laboratory status, notes and evidence limitations remain inspectable. The chart uses equally spaced visit positions and leaves gaps for missing observations. Descriptive classifications never drive health colors or organ effects.
 
-Acceptance case when backend is available: C001 / cmp / glucose / R+1 => 90 mg/dL, baseline approximately 77.33, change approximately +12.67, laboratory status within. This example is not injected into the existing dataset. Organ effects remain independent of laboratory comparisons.
+The existing check-in/body prototype remains a separate, visibly simulated workspace. It is not connected to the read-only dataset endpoints. Changing workspaces retains session-local check-ins. API/network/schema failures show an error with Retry, never mock fallback. Requests are canceled on selection changes to prevent old crew results overwriting the current selection.
+
+
+Validation on 14 November 2026: production build passed; live-browser checks covered C001 glucose at R+1, R+194, preflight handling, C002 missing BUN/creatinine-ratio observations, four-crew comparison, all four panel response shapes, preserved exact decimals, rejected malformed numeric fields, HTTP 404/422/503, 503 retry without mock fallback, and 390/768/1440px layouts. No new frontend dependency was added. ESLint is not configured.

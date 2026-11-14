@@ -9,7 +9,7 @@ React shell, validated local check-in form, crew selection and body visualizatio
 The original value -> engine response -> body color acceptance criterion is NOT complete. It requires approved fixtures/contracts and the body-system mapping. Do not fabricate thresholds in frontend code to pass this checkpoint.
 
 ## G3: core — partial
-System panel has trend, reason, guidance and sources; persistent simulated-data labeling and a status legend are present. Existing lightweight SVG trend charts remain: Recharts is not installed because new dependencies require team approval. Dataset transport is prepared but inactive. Dataset read endpoints do not replace the daily measurement POST and system-status API. Public deploy, all Must endpoints and real check-in assessment remain pending backend/contract handoff.
+System panel has trend, reason, guidance and sources; persistent simulated-data labeling and a status legend are present. Existing lightweight SVG trend charts remain: Recharts is not installed because new dependencies require team approval. All six NASA dataset routes are connected in the separate laboratory workspace and verified against the local API. Dataset read endpoints do not replace the daily measurement POST and system-status API. Public deploy, all Must endpoints and real check-in assessment remain pending backend/contract handoff.
 
 ## Hallway-test script (H30–H31)
 Use 3–5 volunteers; do not claim results before running it.
