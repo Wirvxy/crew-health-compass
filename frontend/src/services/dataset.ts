@@ -1,4 +1,5 @@
-/** OSD-575 transport. Response validation awaits inspection of PR #13 docs/osd575-api.md. */
+import { decodeDataset } from './datasetResponse'
+/** Read-only transport validated against docs/osd575-api.md (PR #13). */
 export const DATASET_PANELS = ['cmp', 'eve_cardiovascular', 'eve_immune', 'alamar_immune'] as const
 export type DatasetPanel = typeof DATASET_PANELS[number]
 export class DatasetApiError extends Error {
@@ -33,11 +34,11 @@ export function createDatasetService(origin = '', transport: typeof fetch = fetc
   }
   const crewPath = (crew: string) => `/astronauts/${encodeURIComponent(crew)}`
   return {
-    trajectory: (crew: string, query: {panel: DatasetPanel; biomarker: string}, signal?: AbortSignal) => get(`${crewPath(crew)}/trajectory`, query, signal),
-    comparison: (query: {panel: DatasetPanel; biomarker: string}, signal?: AbortSignal) => get('/comparison', query, signal),
-    astronauts: (signal?: AbortSignal) => get('/astronauts', undefined, signal),
-    panels: (signal?: AbortSignal) => get('/panels', undefined, signal),
-    measurements: (crew: string, query: {panel: DatasetPanel; biomarker?: string}, signal?: AbortSignal) => get(`${crewPath(crew)}/measurements`, query, signal),
-    postflight: (crew: string, query: {panel: DatasetPanel; biomarker?: string; visit?: string}, signal?: AbortSignal) => get(`${crewPath(crew)}/postflight`, query, signal),
+    trajectory: (crew: string, query: {panel: DatasetPanel; biomarker: string}, signal?: AbortSignal) => get(`${crewPath(crew)}/trajectory`, query, signal).then(value => decodeDataset('trajectory', value)),
+    comparison: (query: {panel: DatasetPanel; biomarker: string}, signal?: AbortSignal) => get('/comparison', query, signal).then(value => decodeDataset('comparison', value)),
+    astronauts: (signal?: AbortSignal) => get('/astronauts', undefined, signal).then(value => decodeDataset('astronauts', value)),
+    panels: (signal?: AbortSignal) => get('/panels', undefined, signal).then(value => decodeDataset('panels', value)),
+    measurements: (crew: string, query: {panel: DatasetPanel; biomarker?: string}, signal?: AbortSignal) => get(`${crewPath(crew)}/measurements`, query, signal).then(value => decodeDataset('measurements', value)),
+    postflight: (crew: string, query: {panel: DatasetPanel; biomarker?: string; visit?: string}, signal?: AbortSignal) => get(`${crewPath(crew)}/postflight`, query, signal).then(value => decodeDataset('postflight', value)),
   }
 }
