@@ -1,0 +1,4 @@
+# Runtime dependencies for the Crew Health Compass API (Python 3.11+).
+# Pinned to exact versions so every machine installs the same code.
+fastapi==0.162.7  # web framework; also installs pydantic and starlette
+uvicorn==0.54.0  # server process that runs the FastAPI app
