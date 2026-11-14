@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import Dashboard from './pages/Dashboard'
 import NasaDataset from './pages/NasaDataset'
+import PageHeader from './components/PageHeader'
+import Sidebar from './components/Sidebar'
+import type { Page } from './components/Sidebar'
 export default function App() {
-  const [view,setView]=useState<'nasa'|'demo'>('nasa')
-  return <><nav className="workspace-switch" aria-label="Data workspace"><button aria-pressed={view==='nasa'} onClick={()=>setView('nasa')}>NASA laboratory data</button><button aria-pressed={view==='demo'} onClick={()=>setView('demo')}>Check-in &amp; body · simulated prototype</button></nav><div hidden={view!=='nasa'}><NasaDataset/></div><div hidden={view!=='demo'}><Dashboard active={view === 'demo'}/></div></>
+  const [page, setPage] = useState<Page>('nasa')
+  function go(next: Page) { setPage(next); window.scrollTo({ top: 0 }) }
+  // Both workspaces stay mounted (only hidden), so check-in drafts and the 3D model survive page changes.
+  return <div className="app-shell" data-page={page}><a href="#page-content" className="sr-only skip-link">Skip to page content</a><Sidebar page={page} onPage={go}/>
+    <main id="page-content" className="app-main" tabIndex={-1}><PageHeader key={page} page={page}/><div hidden={page === 'nasa'}><Dashboard section={page === 'nasa' ? null : page}/></div><div hidden={page !== 'nasa'}><NasaDataset/></div></main></div>
 }
