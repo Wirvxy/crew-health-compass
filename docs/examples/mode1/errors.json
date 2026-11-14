@@ -1,0 +1,20 @@
+{
+  "invalid_unit": {
+    "status": 422,
+    "body": {
+      "detail": "Invalid check-in: heart_rate: unexpected indicator or unit"
+    }
+  },
+  "unknown_astronaut": {
+    "status": 422,
+    "body": {
+      "detail": "Invalid check-in: unknown astronaut_id 'C001'. Known IDs: commander, flight_engineer_1, flight_engineer_2, flight_engineer_3."
+    }
+  },
+  "passport_unencoded_plus": {
+    "status": 404,
+    "body": {
+      "detail": "No postflight visit 'R 45' for C002. Postflight visits: R+1, R+45, R+82, R+194. In URLs, write '+' as %2B (R%2B45)."
+    }
+  }
+}

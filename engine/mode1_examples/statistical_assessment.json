@@ -1,0 +1,40 @@
+{
+  "astronaut_id": "flight_engineer_2",
+  "timestamp": "2030-01-13T07:10:00+00:00",
+  "activity_context": "morning_check",
+  "data_origin": "synthetic",
+  "overall_status": "unusual",
+  "affected_systems": [
+    "cardiovascular"
+  ],
+  "body_marker": "chest",
+  "evidence": [
+    {
+      "indicator": "heart_rate",
+      "unit": "bpm",
+      "value": "81",
+      "baseline": "73.5",
+      "statistics": {
+        "mad": "1.0",
+        "absolute_deviation": "7.5",
+        "robust_z": "5.05875",
+        "status": "unusual",
+        "anomaly": true,
+        "observation_count": 10,
+        "history_span_days": "10.000000",
+        "trend_slope_per_day": "-0.25",
+        "history_origins": [
+          "synthetic"
+        ]
+      }
+    }
+  ],
+  "statistical_findings": [
+    "heart_rate in morning_check is higher than the personal median (81 vs 73.5 bpm)."
+  ],
+  "optional_ml_findings": null,
+  "explanation": "heart_rate in morning_check is higher than the personal median (81 vs 73.5 bpm). The statistical rule compares readings with personal history.",
+  "next_action_protocol_id": null,
+  "insufficient_data": [],
+  "approved_rule_id": null
+}

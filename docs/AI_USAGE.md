@@ -298,3 +298,45 @@ The event requires a description of how AI tools were used. Every agent session 
   - **Correction to the previous entry:** the console is not free of warnings. three.js's FBX loader prints three warnings every time the astronaut model loads (two unsupported texture types are skipped, and extra skinning weights are dropped). This has been true since the model was added. No errors appear.
 - **Still pending:** not checked on other browsers or on a real phone.
 - **Human review:** None yet. C's review is needed before merging.
+
+## 2026-11-14 · Member D · Claude Code · Mode 1 assessment API and A4 passport endpoint
+
+- **Task:** integrate A's `engine-main` (A4 commit `bf284ce`) into the backend. Connect Mode 1 M2 statistical detection to FastAPI, add a read-only A4 passport endpoint, and write the integration guide for C. Requested in the team's integration brief, which D pasted.
+- **Branch:** `d-mode1-passport-api`, from `main` at `4871160`. A's four engine commits were merged with a merge commit, unchanged: `engine/` equals `bf284ce`, and no engine file was edited.
+- **Files changed:**
+  - `api/app/monitoring.py` (new)
+  - `api/app/main.py`, `api/app/osd575.py`
+  - `api/tests/test_monitoring.py` and `api/tests/test_passport.py` (new)
+  - `api/README.md`
+  - `docs/mode1-api.md` (new guide for C)
+  - `docs/examples/mode1/` (real examples generated from the API)
+  - `docs/AI_USAGE.md` (this entry)
+- **Design:**
+  - **Startup:** B's synthetic history is loaded once and indexed with A's `HistoryIndex`. A load failure gives 503 without server paths.
+  - **Assessment:** `POST /api/monitoring/assess` validates the request with `validate_manual_check_in()` (failures give 422) and returns `assess_check_in()` unchanged. That function validates its own output.
+  - **Unknown crew:** an unknown astronaut ID gives 422 instead of a silent `insufficient_data`.
+  - **M3 is never imported:** the M3 Isolation Forest stays off.
+  - **Passport:** `GET /datasets/osd575/astronauts/{crew_id}/passport?visit=` reuses the A2 and A3 results cached at startup.
+- **Local checks:** Windows, Python 3.14.3.
+  - Backend: 108 passed (69 existing and 39 new), 1 known warning.
+  - Engine: 73 run, 68 passed, 5 skipped (M3 tests need the optional scikit-learn, which is not installed).
+  - C002 R+45 passport equals A's example file exactly.
+  - Mode 1 tests cover:
+    - normal, unusual (`chest`) and insufficient-data results;
+    - only strictly earlier readings counting;
+    - rest and exercise history never mixed;
+    - the `other` context;
+    - invalid input and unknown astronauts;
+    - exact decimal digits;
+    - M3 not loaded;
+    - loading once;
+    - 503 without paths;
+    - loading and assessment with the network blocked.
+  - A live server on port 8010 returned the same results.
+- **Open points (in `docs/mode1-api.md`):**
+  - The contract accepts only `data_origin: "user"`, so simulated demo entries can't be marked (A).
+  - The engine's body systems don't match the frontend's system cards (A and C).
+  - The Vite proxy needs `/api` (C).
+  - Endpoint names are proposed.
+  - Check-ins are not stored or chained.
+- **Human review:** None yet. A's and C's review is requested on the PR.

@@ -1,0 +1,18 @@
+{
+  "mock": true,
+  "astronaut_id": "commander",
+  "timestamp": "2030-01-01T07:00:00Z",
+  "activity_context": "rest",
+  "overall_status": "insufficient_data",
+  "affected_systems": [],
+  "body_marker": null,
+  "evidence": [
+    {"indicator": "heart_rate", "value": "72", "unit": "bpm", "baseline": null}
+  ],
+  "statistical_findings": [],
+  "optional_ml_findings": null,
+  "explanation": "Mock example with no personal rest baseline available.",
+  "next_action_protocol_id": null,
+  "data_origin": "synthetic",
+  "insufficient_data": ["personal_rest_baseline_unavailable"]
+}
