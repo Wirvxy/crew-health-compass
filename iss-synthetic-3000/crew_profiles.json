@@ -1,0 +1,41 @@
+{
+  "data_origin": "synthetic",
+  "crew": [
+    {
+      "role": "commander",
+      "pulseRole": "Commander",
+      "age": 47,
+      "sex": "F",
+      "height_cm": 169,
+      "preflight_mass_kg": 64,
+      "aerobic_fitness": "high"
+    },
+    {
+      "role": "flight_engineer_1",
+      "pulseRole": "Flight Engineer 1",
+      "age": 43,
+      "sex": "M",
+      "height_cm": 181,
+      "preflight_mass_kg": 79,
+      "aerobic_fitness": "high"
+    },
+    {
+      "role": "flight_engineer_2",
+      "pulseRole": "Flight Engineer 2",
+      "age": 39,
+      "sex": "F",
+      "height_cm": 174,
+      "preflight_mass_kg": 68,
+      "aerobic_fitness": "high"
+    },
+    {
+      "role": "flight_engineer_3",
+      "pulseRole": "Flight Engineer 3",
+      "age": 51,
+      "sex": "M",
+      "height_cm": 176,
+      "preflight_mass_kg": 76,
+      "aerobic_fitness": "high"
+    }
+  ]
+}
