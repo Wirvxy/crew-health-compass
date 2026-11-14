@@ -19,7 +19,7 @@ export interface Assessment {
   astronautId: string; timepoint: string; context: string
   systems: SystemAssessment[]
 }
-export type DailyField = 'heart' | 'systolic' | 'diastolic' | 'temperature' | 'sleep' | 'mood'
+export type DailyField = 'context' | 'timestamp' | 'heart' | 'respiratory' | 'systolic' | 'diastolic' | 'sleep' | 'mood'
 export type DailyDraft = Record<DailyField, string>
 export interface CheckIn {
   astronautId: string; values: DailyDraft; provenance: 'user' | 'simulated'; timestamp: string

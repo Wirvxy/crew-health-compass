@@ -168,3 +168,12 @@ body::after{content:'';position:fixed;width:110vw;height:80vh;left:4vw;top:70vh;
 .nasa-page :focus-visible{outline:2px solid var(--teal);outline-offset:3px}
 @media(max-width:1000px){.nasa-layout{grid-template-columns:1fr}.nasa-crew-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.nasa-footer{flex-direction:column;align-items:start}.nasa-filters{grid-template-columns:1fr 1fr}.nasa-crew-grid{grid-template-columns:1fr}.nasa-panel{padding:16px}.nasa-metrics dd{font-size:22px}}
+/* Mode 1 results from the backend: status banner, marker button, example buttons, result card and errors. */
+.assessment-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 0;padding:10px 14px;border-radius:16px;background:rgba(10,28,40,.35);border:1px solid rgba(217,234,243,.25);font-size:11px;line-height:1.6;color:#e4eef4}
+.marker-actions{display:flex;justify-content:center;padding:0 16px 12px}.marker-actions button{border-radius:30px;font-size:11px;background:rgba(255,207,144,.14);border-color:#ffcf90;color:#f2f7fa}
+.example-buttons{display:flex;flex-wrap:wrap;gap:2px 14px;margin:-8px 0 14px}.example-buttons button{font-size:10px;min-height:32px;color:#244c5d}
+.result-card{margin-top:16px;padding:14px 16px;border-radius:16px;border:1px solid #9baeb8;background:rgba(255,255,255,.45);color:#1a3442}.result-card p{font-size:11px;line-height:1.7;margin:8px 0}.result-card button{font-size:11px;color:#244c5d;min-height:32px}
+.checkin-error{margin-top:14px;padding:10px 14px;border-radius:12px;border:1px solid #9f2b45;color:#9f2b45;background:rgba(159,43,69,.06);font-size:11px;line-height:1.6}
+.checkin-panel .status.normal{--status:#1d6b55}.checkin-panel .status.watch{--status:#8a5a12}.checkin-panel .status.unavailable{--status:#425e6f}.checkin-panel .status.action{--status:#9f2b45}
+.detail-panel details.info-section summary{cursor:pointer}.detail-panel .data-table th{color:#d1e1eb}
+.nasa-page td button{white-space:nowrap;min-height:36px;padding:6px 14px}.nasa-page td:nth-child(2){white-space:nowrap}

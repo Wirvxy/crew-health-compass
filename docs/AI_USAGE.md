@@ -340,3 +340,32 @@ The event requires a description of how AI tools were used. Every agent session 
   - Endpoint names are proposed.
   - Check-ins are not stored or chained.
 - **Human review:** None yet. A's and C's review is requested on the PR.
+
+## 2026-11-14 · Member D · Claude Code · Frontend connected to the Mode 1 and A4 APIs (frontend/, with permission)
+
+- **Task:** C's frontend integration brief, done by D. D reported that A, B and C gave permission. The goal: connect the existing prototype to the real engine through D's API, without redesigning it.
+- **Branch:** `d-frontend-engine`, built on the backend branch `d-mode1-passport-api` (PR #20), so the endpoints exist.
+- **Mode 1:**
+  - **Check-in form:** sends the exact `MODE1_CONTRACT.md` request (decimal strings, units, UTC timestamp, `data_origin: user`) to `POST /api/monitoring/assess`. The form gained crew, context, mission time and respiratory rate, and lost temperature.
+  - **Crew and defaults:** the crew list and the default time after the history come from `GET /api/monitoring/astronauts`.
+  - **No calculations in React:** statuses map to colours for display only. Green means normal, amber means unusual, grey means not assessed, and red is kept for an approved rule.
+  - **Astronaut:** shows a clickable marker only where `body_marker` says.
+  - **Evidence panel:** shows the backend's evidence, findings, limitations and "no approved action protocol" text.
+  - **Removed (mock only):** the mock fixtures, the NASA-visit timeline and the guided demo.
+- **Mode 2:**
+  - **Passport:** the NASA page shows the A4 passport (`GET /datasets/osd575/astronauts/{crew}/passport?visit=`). It shows counts, panels, findings, the later-observations note, limitations and sources. Lab "unavailable" is labelled as not a missing reading.
+  - **Chart link:** each finding's "Chart" button drives the existing A1–A3 chart.
+- **Configuration:** a configurable `VITE_API_BASE_URL` (default: same origin), and `/api` added to the Vite proxy. No CORS.
+- **End-to-end checks:** Windows, dev server proxied to a local API.
+  - Normal: green, no marker.
+  - Unusual: amber chest marker. Clicking the 3D marker opens heart-rate evidence: 85 vs 66.5 bpm, z 12.47825.
+  - Insufficient: grey, with reasons.
+  - Errors: 422 and backend-down messages, and the loading state, show clearly.
+  - C002 R+45 passport: 302 biomarkers, 1 below the lab interval, 284 with no lab comparison. The request is sent with `%2B`.
+  - All 59 page requests were local, and the console shows no errors.
+  - `npm run build` passes.
+  - Screenshots are in `docs/screenshots/frontend-e2e/`.
+- **Not done:**
+  - Mode 1 history charts: the API exposes no per-reading history yet. It needs a public helper from A, or a new endpoint from D.
+  - C's mock-only files are now unused but not deleted.
+- **Human review:** None yet.

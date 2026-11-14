@@ -1,16 +1,14 @@
-import { matchesSubmittedExample } from '../services/checkin'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import TopBar from '../components/TopBar'
 import DailyCheckIn, { emptyDraft } from '../components/DailyCheckIn'
+import type { ExampleKind } from '../components/DailyCheckIn'
 import BodyMap from '../components/BodyMap'
-import MuscleReport from '../components/MuscleReport'
-import type { MuscleReportEntry } from '../components/MuscleReport'
-import { MUSCLES } from '../data/muscles'
-import SystemDetail from '../components/SystemDetail'
+import MonitoringDetail from '../components/MonitoringDetail'
 import DataNotes from '../components/DataNotes'
-import { loadMockData, selectAssessment } from '../services/assessment'
-import { downloadReport } from '../services/report'
-import type { CheckIn, CrewDraft, DailyDraft, MockData, SystemId } from '../types/assessment'
+import { assessCheckIn, monitoringAstronauts, words } from '../services/monitoring'
+import type { ActivityContext, CheckInRequest, MonitoringAstronauts, MonitoringResult } from '../services/monitoring'
+import { downloadMonitoringReport } from '../services/report'
+import type { CheckIn, CrewDraft, DailyDraft } from '../types/assessment'
 
 interface LinkState { mars: boolean; linked: boolean; queue: CheckIn[]; acknowledged: number }
 type LinkAction = { type: 'toggle' } | { type: 'restore' } | { type: 'queue'; record: CheckIn }
@@ -19,46 +17,73 @@ function linkReducer(s: LinkState, a: LinkAction): LinkState {
   if (a.type === 'restore') return { ...s, linked: true, acknowledged: s.acknowledged + s.queue.length, queue: [] }
   return { ...s, queue: [...s.queue, a.record] }
 }
-const stories = ['Pre-flight / L-92: review the first baseline sample.', 'Pre-flight / L-44: baseline uses all available pre-flight visits.', 'Launch context / L-3: the final pre-flight assay. No in-orbit data is inferred.', 'Return / R+1: review the post-flight response. Statuses are simulated.', 'Recovery / R+45: compare with the same personal baseline.', 'Recovery / R+82: follow the measurement without assuming full recovery.']
+// Demo inputs for commander's rest history (see docs/examples/mode1). Only the backend decides the result.
+const EXAMPLE_CREW = 'commander'
+const EXAMPLES: Record<ExampleKind, Partial<DailyDraft>> = {
+  typical: { context: 'rest', heart: '67', respiratory: '15', systolic: '100', diastolic: '59', sleep: '7.5', mood: 'good' },
+  high: { context: 'rest', heart: '85', respiratory: '15', systolic: '100', diastolic: '59', sleep: '7.5', mood: 'good' },
+  early: { context: 'rest', timestamp: '2030-01-03T13:30', heart: '67', respiratory: '15', systolic: '100', diastolic: '59', sleep: '7.5', mood: 'good' },
+}
+/** The request in the exact MODE1_CONTRACT.md format: decimal strings, units, UTC timestamp. */
+function toRequest(crew: string, v: DailyDraft): CheckInRequest {
+  const q = (value: string, unit: string) => ({ value: value.trim(), unit })
+  return {
+    astronaut_id: crew, timestamp: `${v.timestamp.length === 16 ? `${v.timestamp}:00` : v.timestamp}Z`, activity_context: v.context as ActivityContext, data_origin: 'user',
+    indicators: { heart_rate: q(v.heart, 'bpm'), respiratory_rate: q(v.respiratory, 'breaths/min'), systolic_bp: q(v.systolic, 'mmHg'), diastolic_bp: q(v.diastolic, 'mmHg'),
+      ...(v.sleep.trim() ? { sleep_duration: q(v.sleep, 'h') } : {}), ...(v.mood ? { mood: v.mood } : {}) },
+  }
+}
+/** Default mission time: the day after the synthetic history ends, so every context has earlier readings. */
+function afterHistory(info: MonitoringAstronauts) {
+  const end = info.astronauts.flatMap(a => a.history.map(h => h.last)).sort().pop() ?? ''
+  if (!end) return { end, next: '' }
+  const day = new Date(end); day.setUTCDate(day.getUTCDate() + 1)
+  return { end, next: `${day.toISOString().slice(0, 10)}T12:00` }
+}
 
-// section: which sidebar page is showing this workspace, or null while the NASA page is open.
-export default function Dashboard({ section }: { section: 'checkin' | 'body' | null }) {
-  const [data, setData] = useState<MockData | null>(null), [error, setError] = useState(''), [retry, setRetry] = useState(0)
-  const [crew, setCrew] = useState('C001'), [visit, setVisit] = useState('R+1'), [systemId, setSystem] = useState<SystemId>('cardio'), [markerId, setMarker] = useState<string | null>(null)
-  const [drafts, setDrafts] = useState<Record<string, CrewDraft>>({}), [submissions, setSubmissions] = useState<Record<string, CheckIn>>({})
-  const [role, setRole] = useState('surgeon'), [wall, setWall] = useState(false), [notes, setNotes] = useState(false), [story, setStory] = useState<number | null>(null), [message, setMessage] = useState('')
+export default function Dashboard({ section, onShowBody }: { section: 'checkin' | 'body' | null; onShowBody: () => void }) {
+  const [info, setInfo] = useState<MonitoringAstronauts | null>(null), [loadError, setLoadError] = useState(''), [retry, setRetry] = useState(0)
+  const [crew, setCrew] = useState(EXAMPLE_CREW), [drafts, setDrafts] = useState<Record<string, CrewDraft>>({}), [submissions, setSubmissions] = useState<Record<string, CheckIn>>({})
+  const [results, setResults] = useState<Record<string, { result: MonitoringResult; example: boolean }>>({}), [pending, setPending] = useState(false), [submitError, setSubmitError] = useState('')
+  const [selected, setSelected] = useState<string | null>(null), [role, setRole] = useState('surgeon'), [wall, setWall] = useState(false), [notes, setNotes] = useState(false), [message, setMessage] = useState('')
   const [link, dispatch] = useReducer(linkReducer, { mars: false, linked: false, queue: [], acknowledged: 0 })
-  const [muscleView, setMuscleView] = useState<'front' | 'back'>('front'), [muscleId, setMuscleId] = useState<string | null>(null), [reportMode, setReportMode] = useState(false), [muscleReports, setMuscleReports] = useState<MuscleReportEntry[]>([])
-  const crewReports = useMemo(() => muscleReports.filter(r => r.crew === crew), [muscleReports, crew])
-  const muscle = MUSCLES.find(m => m.id === muscleId && m.view === muscleView) || null
-  const draft = drafts[crew] || emptyDraft()
-  useEffect(() => { const controller = new AbortController(); setError(''); loadMockData(controller.signal).then(setData).catch(e => { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : 'Unable to load data.') }); return () => controller.abort() }, [retry])
-  const assessment = useMemo(() => data ? selectAssessment(data, crew, visit, matchesSubmittedExample(submissions[crew], data.dailyDemo.values)) : null, [data, crew, visit, submissions])
+  useEffect(() => { const controller = new AbortController(); setLoadError(''); monitoringAstronauts(controller.signal).then(setInfo).catch(e => { if (!controller.signal.aborted) setLoadError(e instanceof Error ? e.message : 'Unable to reach the backend.') }); return () => controller.abort() }, [retry])
   useEffect(() => { if (!message) return; const timer = setTimeout(() => setMessage(''), 5500); return () => clearTimeout(timer) }, [message])
   useEffect(() => { if (!link.mars || link.linked) return; const timer = setTimeout(() => { dispatch({ type: 'restore' }); setMessage('Simulated ground link restored. No data was transmitted.') }, 12 * 60 * 1000); return () => clearTimeout(timer) }, [link.mars, link.linked])
-  useEffect(() => { if (story == null || !data) return; setVisit(data.timepoints[story]); setMarker(null); const timer = setTimeout(() => setStory(story < 5 ? story + 1 : null), 5000); return () => clearTimeout(timer) }, [story, data])
-  // The guided demo and its shortcuts drive the body page. Stop the demo when that page is hidden, so its timer cannot change hidden state.
-  useEffect(() => { if (section !== 'body') setStory(null) }, [section])
-  useEffect(() => { if (section !== 'body') return; function key(e: KeyboardEvent) { if (e.key === 'Escape') { setStory(null); return }; if (notes || ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'SUMMARY'].includes((e.target as HTMLElement).tagName)) return; if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); setVisit(v => data?.timepoints[Math.max(0, Math.min(5, data.timepoints.indexOf(v) + (e.key === 'ArrowRight' ? 1 : -1)))] || v); setMarker(null) }; if (e.key.toLowerCase() === 'd') setStory(s => s == null ? 0 : null) }; document.addEventListener('keydown', key); return () => document.removeEventListener('keydown', key) }, [section, data, notes])
-  function updateDraft(next: CrewDraft) { setDrafts(d => ({ ...d, [crew]: next })) }
-  function example() { if (!data) return; updateDraft(draft.simulated ? emptyDraft() : { simulated: true, values: Object.fromEntries(Object.entries(data.dailyDemo.values).map(([key, value]) => [key, String(value)])) as DailyDraft }); setMarker(null); setMessage(draft.simulated ? 'Synthetic example cleared.' : 'Explicit synthetic values loaded. They are not Inspiration4 measurements.') }
-  function submit(values: DailyDraft) { const record: CheckIn = { astronautId: crew, values: { ...values }, provenance: draft.simulated ? 'simulated' : 'user', timestamp: new Date().toISOString() }; setSubmissions(s => ({ ...s, [crew]: record })); if (link.mars && !link.linked) { dispatch({ type: 'queue', record }); setMessage('Saved in this tab session. Added to the simulated ground queue.') } else setMessage('Saved in this tab session. Assessment pending; nothing transmitted.') }
-  if (error) return <div className="page"><h2>Unable to load the prototype</h2><p>{error}</p><button onClick={() => setRetry(n => n + 1)}>Retry</button></div>
-  if (!data || !assessment) return <div className="page" role="status">Loading Crew Health Compass…</div>
-  const system = assessment.systems.find(s => s.id === systemId)!, marker = system.markers.find(m => m.id === markerId) || system.markers.find(m => m.id === system.defaultMarker) || null
+  const timing = useMemo(() => info ? afterHistory(info) : { end: '', next: '' }, [info])
+  const draft = drafts[crew] || emptyDraft(timing.next), current = results[crew] ?? null
+  // Editing example values turns them into a manual entry.
+  function updateDraft(next: CrewDraft) { setDrafts(d => ({ ...d, [crew]: { ...next, simulated: false } })) }
+  function example(kind: ExampleKind) {
+    setCrew(EXAMPLE_CREW); setSelected(null); setSubmitError('')
+    setDrafts(d => ({ ...d, [EXAMPLE_CREW]: { values: { ...emptyDraft(timing.next).values, ...EXAMPLES[kind] }, simulated: true } }))
+    setMessage('Example values filled for commander (rest). Submit to assess them.')
+  }
+  async function submit(values: DailyDraft) {
+    const who = crew, example = draft.simulated, body = toRequest(who, values)
+    setPending(true); setSubmitError('')
+    try {
+      const result = await assessCheckIn(body)
+      setResults(r => ({ ...r, [who]: { result, example } })); setSelected(result.evidence.find(e => e.statistics?.anomaly)?.indicator ?? null)
+      const record: CheckIn = { astronautId: who, values: { ...values }, provenance: example ? 'simulated' : 'user', timestamp: body.timestamp }
+      setSubmissions(s => ({ ...s, [who]: record }))
+      if (link.mars && !link.linked) { dispatch({ type: 'queue', record }); setMessage('Assessed locally. Added to the simulated ground queue.') } else setMessage('Assessed by the local backend.')
+    } catch (error) { setSubmitError(error instanceof Error ? error.message : 'The assessment failed.') } finally { setPending(false) }
+  }
+  if (loadError) return <div className="page"><h2>Unable to reach the Mode 1 backend</h2><p>{loadError}</p><button onClick={() => setRetry(n => n + 1)}>Retry</button></div>
+  if (!info) return <div className="page" role="status">Loading Mode 1 crew and history…</div>
+  const crews = info.astronauts.map(a => a.astronaut_id)
   return <div className={`${role === 'astronaut' ? 'astronaut' : ''} ${wall ? 'wall' : ''}`}>
-    <div className="page"><aside className="prototype-scope" aria-label="Prototype scope"><strong>SIMULATED DATA · Frontend prototype</strong><span>System labels are provisional. Clinical rules and check-in API are pending. Historical NASA assays are shown separately.</span></aside><div className="page-toolbar">
-      <TopBar crew={crew} crews={data.crew} context={assessment.context} link={link.mars ? link.linked ? 'Live · simulated' : 'Delayed · simulated' : 'Offline'} onCrew={c => { setCrew(c); setMarker(null); setMuscleId(null) }} /><div className="tools">
+    <div className="page"><aside className="prototype-scope" aria-label="Mode 1 scope"><strong>MODE 1 · MISSION HEALTH MONITOR · SIMULATED HISTORY</strong><span>Check-ins are compared with fictional crew history by the local backend. Separate from the real NASA data in Mode 2.</span></aside><div className="page-toolbar">
+      <TopBar crew={crew} crews={crews} context={`Synthetic ISS history · ends ${timing.end.slice(0, 10)}`} link={link.mars ? link.linked ? 'Live · simulated' : 'Delayed · simulated' : 'Offline'} onCrew={c => { setCrew(c); setSelected(null); setSubmitError('') }} /><div className="tools">
       <select id="role" aria-label="Role view" value={role} onChange={e => setRole(e.target.value)}><option value="astronaut">Astronaut view</option><option value="surgeon">Flight Surgeon view</option></select>
       <button id="mars" aria-pressed={link.mars} onClick={() => dispatch({ type: 'toggle' })}>Mars-ready {link.mars ? 'On' : 'Off'}</button>
-      {section === 'body' && <button id="demo" aria-pressed={story != null} onClick={() => setStory(s => s == null ? 0 : null)}>{story == null ? '▷ Guided demo' : 'Ⅱ Stop demo'}</button>}
-      <button id="export" className="surgeon-only" onClick={() => { downloadReport(assessment, submissions[crew], crewReports); setMessage('PDF downloaded locally. No data transmitted.') }}>↓ Export PDF</button>
+      <button id="export" className="surgeon-only" disabled={!current} onClick={() => { if (!current) return; downloadMonitoringReport(current.result, current.example); setMessage('PDF downloaded locally. No data transmitted.') }}>↓ Export PDF</button>
       <button id="wall" className="quiet" aria-pressed={wall} title="Large-screen mission wall" onClick={() => setWall(w => !w)}>⛶ <span className="sr-only">Mission wall</span></button>
-    </div></div><div className="link-info"><span>{matchesSubmittedExample(submissions[crew], data.dailyDemo.values) ? 'SIMULATED DAILY SERIES · Recorded assays remain available · Mock API statuses' : 'OSD-575 recorded assays · Assessment statuses: simulated API fixtures'}</span><span id="latency">{link.mars ? `SIMULATED LINK · 12 min one-way · ${link.queue.length} queued · ${link.acknowledged} acknowledged` : 'LOCAL SESSION · No ground connection · No live telemetry'}</span>{link.mars && !link.linked && <button id="restore" onClick={() => { dispatch({ type: 'restore' }); setMessage('Link return simulated. Queue acknowledged locally; no data sent.') }}>Simulate link return</button>}</div>
-    <div className="zones-checkin" hidden={section !== 'checkin'}><DailyCheckIn key={crew} crew={crew} crews={data.crew} draft={draft} submissions={submissions} onChange={updateDraft} onExample={example} onSubmit={submit} /></div>
-    <div className="zones-body" hidden={section !== 'body'}><BodyMap view={muscleView} onView={v => { setMuscleView(v); setMuscleId(null) }} muscle={muscle} onMuscle={m => { setMuscleId(m.id); setReportMode(true) }} reportMode={reportMode} onMode={setReportMode} reports={crewReports} systems={assessment.systems} selected={systemId} visit={visit} timepoints={data.timepoints} story={story == null ? '' : stories[story]} onSelect={id => { setSystem(id); setMarker(null); setReportMode(false) }} onVisit={v => { setVisit(v); setMarker(null) }} />
-      {reportMode ? <MuscleReport key={`${crew}-${muscleId}`} crew={crew} muscle={muscle} reports={crewReports} onEvidence={() => setReportMode(false)} onSave={entry => { setMuscleReports(entries => { const previous = entries.find(r => r.crew === entry.crew && r.view === entry.view && r.muscleId === entry.muscleId); return [...entries.filter(r => r !== previous), { ...entry, id: previous?.id || entry.id }] }); setMessage('Muscle location saved in this tab session. No clinical assessment or transmission performed.') }} onRemove={id => setMuscleReports(entries => entries.filter(r => r.id !== id))} onShow={entry => { setMuscleView(entry.view); setMuscleId(entry.muscleId); setReportMode(true) }} /> : <SystemDetail crew={crew} visit={visit} system={system} marker={marker} submitted={submissions[crew]} baselineMethod={data.baselineMethod} onMarker={setMarker} onNotes={() => setNotes(true)} />}
-    </div><footer><span>Research prototype, not a diagnostic device.</span><span className="mono">Cited data. Personal baselines. Explicit uncertainty.</span><button id="notes" className="text-button" onClick={() => setNotes(true)}>Data &amp; prototype notes ↗</button></footer></div>
+    </div></div><div className="link-info"><span>{current ? `Latest result for ${words(crew)}: ${words(current.result.overall_status)} · ${current.example ? 'example values' : 'user-entered'}` : `No check-in assessed for ${words(crew)} yet`}</span><span id="latency">{link.mars ? `SIMULATED LINK · 12 min one-way · ${link.queue.length} queued · ${link.acknowledged} acknowledged` : 'LOCAL SESSION · No ground connection · No live telemetry'}</span>{link.mars && !link.linked && <button id="restore" onClick={() => { dispatch({ type: 'restore' }); setMessage('Link return simulated. Queue acknowledged locally; no data sent.') }}>Simulate link return</button>}</div>
+    <div className="zones-checkin" hidden={section !== 'checkin'}><DailyCheckIn key={crew} crew={crew} crews={crews} draft={draft} submissions={submissions} historyEnd={timing.end || null} pending={pending} error={submitError} result={current?.result ?? null} onChange={updateDraft} onExample={example} onSubmit={submit} onShowBody={onShowBody} /></div>
+    <div className="zones-body" hidden={section !== 'body'}><BodyMap result={current?.result ?? null} selected={selected} onSelect={setSelected} /><MonitoringDetail result={current?.result ?? null} selected={selected} example={!!current?.example} onSelect={setSelected} /></div>
+    <footer><span>Research prototype, not a diagnostic device.</span><span className="mono">Personal baselines. Synthetic history. Explicit uncertainty.</span><button id="notes" className="text-button" onClick={() => setNotes(true)}>Data &amp; prototype notes ↗</button></footer></div>
     {notes && <DataNotes onClose={() => setNotes(false)} />}{message && <div className="toast" role="status">{message}</div>}
   </div>
 }

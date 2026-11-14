@@ -1,17 +1,19 @@
-import type { MuscleReportEntry } from '../components/MuscleReport'
-import type { Assessment, CheckIn } from '../types/assessment'
+import type { MonitoringResult } from './monitoring'
 // A small text-only PDF writer using the standard Helvetica font; no runtime dependency.
-export function downloadReport(assessment: Assessment, submission?: CheckIn, muscleReports: MuscleReportEntry[] = []) {
-  const lines = ['CREW HEALTH COMPASS', `${assessment.astronautId} / ${assessment.timepoint}`, 'Research prototype, not a diagnostic device.', 'Status classifications are simulated API fixtures; assessment rules are pending.', '']
-  for (const system of assessment.systems) {
-    lines.push(system.name, `Status: ${system.status} (${system.statusProvenance})`, system.reason, `Next step: ${system.action}`)
-    const marker = system.markers.find(m => m.id === system.defaultMarker)
-    if (marker) lines.push(`${marker.name}: ${marker.value ?? 'missing'} ${marker.unit}; baseline: ${marker.baseline ?? 'missing'} (${marker.baselineCount}/3 pre-flight visits).`, `Provenance: ${marker.provenance}`, `Source: ${marker.source.title}`, `Trend: ${marker.trend.map(p => `${p.time} ${p.value ?? 'missing'}`).join('; ')}`, `Supplied interval: ${marker.reference.low ?? 'unbounded'} to ${marker.reference.high ?? 'unbounded'} ${marker.unit}`)
-    lines.push('')
+export function downloadMonitoringReport(result: MonitoringResult, example: boolean) {
+  const lines = ['CREW HEALTH COMPASS - MODE 1 MISSION HEALTH MONITOR', `${result.astronaut_id} / ${result.activity_context} / ${result.timestamp}`, 'Research prototype, not a diagnostic device.',
+    'Statistical comparison with synthetic personal history (fictional crew and readings).', `Input: ${example ? 'example values filled by the app' : 'user-entered'}`, '',
+    `Overall status: ${result.overall_status}`, `Affected systems: ${result.affected_systems.join(', ') || 'none'}`, `Body marker: ${result.body_marker ?? 'none'}`, result.explanation, '']
+  for (const e of result.evidence) {
+    const s = e.statistics
+    lines.push(`${e.indicator}: ${e.value ?? e.category ?? 'unavailable'} ${e.value != null ? e.unit : ''}; baseline: ${e.baseline ?? 'unavailable'}`,
+      s ? `  status ${s.status}; robust z ${s.robust_z ?? 'unavailable'}; MAD ${s.mad ?? 'unavailable'}; ${s.observation_count} earlier readings; history: ${s.history_origins.join(', ')}` : '  not compared')
   }
-  if (submission) lines.push('Latest daily check-in', submission.timestamp, `Provenance: ${submission.provenance}`, ...Object.entries(submission.values).map(([k, v]) => `${k}: ${v}`), 'Clinical assessment pending. Not transmitted.')
-  for (const r of muscleReports) lines.push('User-reported muscle location', r.muscleName + ' / ' + r.view, `Intensity ${r.severity}/10; ${r.kind}; ${r.onset}`, r.notes, 'Provenance: user; ' + r.timestamp, 'Not inferred from assay measurements.');
-  lines.push('Baseline: median of available L-92, L-44 and L-3 values.', 'https://osdr.nasa.gov/bio/repo/data/studies/OSD-575')
+  lines.push('', 'Limitations:', ...result.insufficient_data.map(r => `- ${r}`), '', `Next action: ${result.next_action_protocol_id ?? 'no approved action protocol; exploratory monitoring finding, not a diagnosis.'}`)
+  savePdf(lines, `Crew-Health-${result.astronaut_id}-${result.timestamp.slice(0, 16).replace(/[^0-9T]/g, '')}.pdf`)
+}
+
+function savePdf(lines: string[], filename: string) {
   const wrapped = lines.flatMap(line => {
     const ascii = line.replace(/[^\x20-\x7e]/g, '-')
     return ascii.match(/.{1,88}(?:\s|$)|.{1,88}/g)?.map(s => s.trim()) || ['']
@@ -30,5 +32,5 @@ export function downloadReport(assessment: Assessment, submission?: CheckIn, mus
   objects.forEach((object, i) => { offsets.push(pdf.length); pdf += `${i + 1} 0 obj\n${object}\nendobj\n` })
   const xref = pdf.length; pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map(n => `${String(n).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
   const url = URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' })), a = document.createElement('a')
-  a.href = url; a.download = `Crew-Health-${assessment.astronautId}-${assessment.timepoint}.pdf`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
+  a.href = url; a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
