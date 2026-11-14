@@ -101,16 +101,47 @@ def _list(value, item_validator):
 
 
 def _evidence(item):
-    item = _object(item, {"indicator", "value", "unit", "baseline"})
+    item = _object(item, {"indicator", "value", "unit", "baseline"}, {"statistics", "category"})
     indicator = _text(item["indicator"])
     unit = _text(item["unit"])
     if indicator in CHECK_IN_UNITS and unit != CHECK_IN_UNITS[indicator]:
         raise ValueError(f"{indicator}: unexpected evidence unit")
-    return {
+    result = {
         "indicator": indicator,
         "unit": unit,
         "value": None if item["value"] is None else _decimal(item["value"]),
         "baseline": None if item["baseline"] is None else _decimal(item["baseline"]),
+    }
+    if "statistics" in item:
+        result["statistics"] = _statistics(item["statistics"])
+    if "category" in item:
+        if indicator != "mood" or unit != "category" or result["value"] is not None or result["baseline"] is not None:
+            raise ValueError("category requires mood evidence with null numeric values")
+        result["category"] = _choice(item["category"], MOODS, "mood")
+    return result
+
+
+def _statistics(value):
+    decimals = {"mad", "absolute_deviation", "robust_z", "history_span_days", "trend_slope_per_day"}
+    value = _object(value, decimals | {"status", "anomaly", "observation_count", "history_origins"})
+    status = _choice(value["status"], STATUSES - {"rule_supported_warning"}, "statistics.status")
+    anomaly = value["anomaly"]
+    if anomaly is not {"normal": False, "unusual": True, "insufficient_data": None}[status]:
+        raise ValueError("statistics.anomaly must match statistics.status")
+    count = value["observation_count"]
+    if type(count) is not int or count < 0:
+        raise ValueError("statistics.observation_count must be a nonnegative integer")
+    return {
+        **value,
+        **{
+            name: None if value[name] is None else _decimal(
+                value[name], nonnegative=name in {"mad", "absolute_deviation", "history_span_days"}
+            )
+            for name in sorted(decimals)
+        },
+        "history_origins": _list(
+            value["history_origins"], lambda origin: _choice(origin, {"synthetic", "user"}, "history origin")
+        ),
     }
 
 
