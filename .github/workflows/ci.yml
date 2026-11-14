@@ -1,0 +1,58 @@
+# Continuous integration (CI): GitHub runs these checks automatically on every
+# pull request into main and on every push to main. A red check means
+# "do not merge until it is fixed".
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+# The token GitHub gives this workflow may only read the repository.
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend build and audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      # Actions are pinned to full commit SHAs, so a moved tag cannot change
+      # what runs here. The comment names the release each SHA belongs to.
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Do not store the token in .git/config, where later steps
+          # (including npm install scripts) could read it.
+          persist-credentials: false
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          # The locked vite and @vitejs/plugin-react require
+          # Node ^20.19.0 || >=22.12.0 (see frontend/package-lock.json).
+          node-version: 24
+          # No dependency cache: simpler, and a cache cannot be poisoned.
+          package-manager-cache: false
+
+      - name: Install exact locked dependencies
+        run: npm ci
+
+      - name: Type-check and build (tsc --noEmit && vite build)
+        run: npm run build
+
+      - name: Audit dependencies (fail on high or critical)
+        run: npm audit --audit-level=high
+
+  # Pending checks, added when the code they check exists:
+  # - Backend: ruff, pytest and pip-audit, once a Python dependency file
+  #   (pyproject.toml or requirements.txt) and tests are committed.
+  # - Frontend lint: frontend/package.json has no lint script and no ESLint.
+  # - Secret scanning (gitleaks): planned for H8-H11.
