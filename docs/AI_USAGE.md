@@ -109,3 +109,30 @@ The event requires a description of how AI tools were used. Every agent session 
   - Concurrent appends have not been tested. When appends overlap, one can fail and must be handled, for example by retrying. No retry exists yet.
   - These tests have not yet run in CI.
 - **Human review:** None yet.
+
+## 2026-11-14 · Member D · Claude Code · Secret scanning (gitleaks)
+
+- **Task:** Add a `secrets` job to the CI workflow. It scans the full Git history with gitleaks, and any finding fails the job. The existing frontend and backend jobs are unchanged.
+- **Files changed:**
+  - `.github/workflows/ci.yml` (new `secrets` job; the gitleaks line is removed from the "pending checks" comment)
+  - `README.md` (secret-scanning status, and a note that a finding means the secret has already been pushed)
+  - `docs/AI_USAGE.md` (this entry)
+- **New tool:** gitleaks 8.30.1 (MIT), the official release from github.com/gitleaks/gitleaks.
+  - CI downloads `gitleaks_8.30.1_linux_x64.tar.gz` and checks it against a pinned SHA-256.
+  - That hash matched three sources: the release's `checksums.txt`, GitHub's asset digest, and a local hash of the downloaded file.
+  - It is a CI tool only, not an app dependency.
+- **Local checks:** Run on Windows with the gitleaks 8.30.1 Windows build, verified the same way.
+  - **Our repository's history:** "no leaks found" (exit 0). It scanned 16 commits across all branches; the other 10 add no text. Those are 9 merge commits with empty combined diffs, plus `1a14c4f`, which only deletes files.
+  - **Detection test in a throwaway local repository** (never in our shared repo):
+    - A random value in the GitHub-token format (`ghp_` + 36 characters), in a file marked FAKE, was committed and then deleted in a later commit.
+    - `gitleaks git` found it in history (rule `github-pat`, exit 1). `gitleaks dir`, which scans current files only, did not.
+    - The value was redacted, and a check confirmed it never appeared in any output.
+  - **Checksum step:** the pinned hash passed (exit 0); a hash with one character changed failed (exit 1).
+- **Limits:**
+  - Binary files are not scanned in Git-history mode: one `.xlsx` and one `.zip` in `download/` so far. The zip's contents are also committed as text files, which are scanned.
+  - The job runs after a push, so anything it finds is already on GitHub. Removing it would need the credential revoked; history is not rewritten automatically.
+- **CI correction to the previous entry:** the audit-chain tests have now run in CI.
+  - On PR #9 (commit `a0fb961`), 22 of 22 tests passed on CPython 3.11.18 and 3.14.10.
+  - The run on `main` after the merge (`a224417`) reported success; its logs were not inspected.
+  - PR #9 was merged at 16:03 UTC, about 40 seconds after it opened. No human review is recorded.
+- **Human review:** None yet.
