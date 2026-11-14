@@ -88,7 +88,7 @@ The security scope is kept small enough to finish in 48 hours. Each protection b
 |---|---|---|
 | Input validation and plausibility checks | Malformed values and unknown units are refused with HTTP 422. Physically impossible values become a "data problem, re-measure" result instead of a medical alarm. | Planned (H2–H11) |
 | Demo access control | Every request carries a fixed demo token for one of two roles: astronaut or flight surgeon. The server uses the token for basic **authentication** (identifying the caller through the token) and **authorization** (checking what that caller may access). An astronaut's token therefore reads only that astronaut's data. | Planned (H8–H14) |
-| Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint. | Planned (H4–H8) |
+| Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint. | Built and tested locally. No measurements are stored in it yet, and the response shape is provisional |
 | Secret and dependency scanning | CI runs gitleaks, pip-audit and npm audit on every pull request. | Planned (H8–H11) |
 | Encryption at rest | Measurement values are encrypted inside the SQLite file. | Planned (H6–H8) |
 | Signed report packet | Ed25519 signature. Changing one byte makes verification fail. | Planned, if time permits (H24–H30) |
@@ -98,7 +98,7 @@ Each protection stays **Planned** until it is implemented and tested.
 **Known limits:**
 
 - Demo access control is **not** production-ready account management. There are no user accounts, no passwords, and the tokens are fixed demo values. Anyone who has a token can act as that caller. A token that is shared or publicly exposed, for example on the public demo, does not establish a private user identity.
-- The hash chain detects edits to stored records. It cannot stop someone who rewrites the whole chain *and* the stored latest hash. Future work: sign that latest hash or keep a copy somewhere else.
+- The hash chain detects edits to stored records. It has two blind spots. Someone who can write to the database file can change a record and recompute every later hash, because the hash uses no secret key. Deleting records from the end also leaves a valid, shorter chain. Future work: sign the latest hash or keep a copy somewhere else.
 - The encryption key is an environment variable on the same machine, so encryption at rest only protects a database file that has been copied elsewhere. Future work: hardware-backed key storage.
 - `.gitignore` lists files such as `.env` and `*.key` so that `git add` skips them by accident. It is not a guarantee:
   - it has no effect on a file that is already tracked

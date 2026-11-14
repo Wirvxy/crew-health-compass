@@ -1,11 +1,12 @@
 # Crew Health Compass API
 
-This is the backend foundation: a FastAPI app with one liveness endpoint, plus a SQLite transaction helper. Owner: D.
+This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite transaction helper, and a hash-chained audit log. Owner: D.
 
 | Path | Purpose |
 |---|---|
-| `app/main.py` | FastAPI app with `GET /health` |
+| `app/main.py` | FastAPI app with `GET /health` and `GET /audit/verify` |
 | `app/db.py` | Database path setting and the `transaction()` helper |
+| `app/audit.py` | Hash-chained `records` table: append and verify |
 | `tests/` | pytest tests, all using temporary databases |
 | `requirements.txt` | Runtime dependencies, pinned |
 | `requirements-dev.txt` | Runtime and test dependencies, pinned |
@@ -33,7 +34,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Expected result: `10 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)).
+Expected result: `22 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)).
 
 CI (`.github/workflows/ci.yml`, job `backend`) runs the same install and test commands on Linux with Python 3.11 and 3.14, then runs pip-audit.
 
@@ -75,7 +76,30 @@ with transaction() as conn:
 - The connection is closed in both cases. Python's own `with sqlite3.connect(...)` does not close it.
 - Always use `?` placeholders. Never build SQL by joining strings (AGENTS.md section 6).
 
-No tables exist yet. The schema waits for the contracts the team freezes at G1.
+The only table so far is `records`, the audit log described below. Measurement fields wait for the contracts the team freezes at G1.
+
+## Audit log (hash chain)
+
+Stored records go in one append-only table, `records`, through `audit.append_record(conn, kind, payload)`. The chain covers only records added this way. Measurement writes are not connected to it yet, because they wait for the G1 contracts.
+- Each row keeps its data (`kind`, a JSON `payload`, `recorded_at`), the hash of the row before it (`prev_hash`, 64 zeros for the first row), and its own SHA-256 `hash`.
+- The hash covers the row's id, time, kind, payload and `prev_hash`, so every row is locked to the one before it.
+
+`GET /audit/verify` recomputes every hash in order:
+- Intact chain: `{"valid": true, "records_checked": 3}`
+- Broken chain: `{"valid": false, "first_broken_id": 2, "reason": "record content does not match its stored hash"}`
+
+This response shape is **provisional**: it is not in the shared contracts yet, and A must confirm it. Until demo access control exists, any caller can use the endpoint.
+
+**What a valid chain shows:** since each row was written, no row has been edited, removed from the middle or reordered, unless the hashes of every later row were also recomputed.
+
+**What it does not show:**
+- The hash uses no secret key. Anyone who can write to the database file can change a row and then recompute every later hash, and the chain will look valid again. A test (`test_limit_rewriting_every_later_hash_is_not_detected`) documents this. Catching it needs the latest hash kept somewhere else, or signed (future work).
+- Deleting rows from the end leaves a shorter chain that is still valid (`test_limit_deleting_the_last_record_is_not_detected`).
+- Whether a value was correct when it was written. That is the job of input validation, which is not built yet.
+
+**Concurrent writes:** if two appends overlap, one of them can fail (a duplicate id, or "database is locked") and is rolled back. The caller has to handle that, for example by retrying. No retry exists yet, and concurrent appends have not been tested.
+
+To try it, launch the server with `CREW_HEALTH_DB_PATH` pointing at a test database that has a few records. Change one record's `payload` with any SQLite tool, then call `Invoke-RestMethod http://127.0.0.1:8000/audit/verify`.
 
 ## What `/health` means
 
@@ -103,7 +127,8 @@ No tables exist yet. The schema waits for the contracts the team freezes at G1.
 
 ## Not built yet (on purpose)
 
-- Measurement, status, history, catalogue, report, audit and demo endpoints. These wait for the contracts at G1.
-- Database tables, demo access control, plausibility checks, the audit chain, encryption and report signing.
+- Measurement, status, history, catalogue, report and demo endpoints. These wait for the contracts at G1.
+- Measurement tables, demo access control, plausibility checks, encryption and report signing.
+- Protection for the audit chain's latest hash (an outside copy or a signature).
 - Python linting (ruff) in CI, and deployment (Docker).
 - Instructions verified on macOS or Linux. On those systems, `.venv/bin/python` should replace `.\.venv\Scripts\python.exe`, but this has not been tested.
