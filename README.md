@@ -89,7 +89,7 @@ The security scope is kept small enough to finish in 48 hours. Each protection b
 | Input validation and plausibility checks | Malformed values and unknown units are refused with HTTP 422. Physically impossible values become a "data problem, re-measure" result instead of a medical alarm. | Planned (H2–H11) |
 | Demo access control | Every request carries a fixed demo token for one of two roles: astronaut or flight surgeon. The server uses the token for basic **authentication** (identifying the caller through the token) and **authorization** (checking what that caller may access). An astronaut's token therefore reads only that astronaut's data. | Planned (H8–H14) |
 | Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint. | Built and tested locally. No measurements are stored in it yet, and the response shape is provisional |
-| Secret and dependency scanning | CI runs gitleaks, pip-audit and npm audit on every pull request. | Planned (H8–H11) |
+| Secret and dependency scanning | CI runs npm audit, pip-audit, and a gitleaks scan of the full Git history on every pull request and every push to `main`. Binary files are not scanned for secrets. | Running in CI. The gitleaks job is new in this change |
 | Encryption at rest | Measurement values are encrypted inside the SQLite file. | Planned (H6–H8) |
 | Signed report packet | Ed25519 signature. Changing one byte makes verification fail. | Planned, if time permits (H24–H30) |
 
@@ -105,7 +105,7 @@ Each protection stays **Planned** until it is implemented and tested.
   - `git add -f` overrides it
   - it cannot see a secret pasted into an ordinary file
 
-  Everyone checks their own diff before committing, and the planned gitleaks scan in CI is the second line of defence. Local secrets belong in `.env`; `.env.example` lists the variable names with placeholder values.
+  Everyone checks their own diff before committing, and the gitleaks scan in CI is the second line of defence. It runs only after a push, so a secret it finds is already in the Git history on GitHub. Local secrets belong in `.env`; `.env.example` lists the variable names with placeholder values.
 
 ## How we work
 

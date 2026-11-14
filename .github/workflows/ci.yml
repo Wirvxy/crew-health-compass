@@ -103,7 +103,45 @@ jobs:
       - name: Audit installed dependencies (fail on any known vulnerability)
         run: python -m pip_audit -r "$RUNNER_TEMP/installed.txt" --no-deps --disable-pip
 
+  secrets:
+    name: Secret scan (gitleaks, full Git history)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        # Explicit bash adds "-o pipefail", so a failure anywhere in a pipe
+        # (such as echo | sha256sum) fails the step.
+        shell: bash
+    env:
+      GITLEAKS_VERSION: "8.30.1"
+      # SHA-256 of gitleaks_8.30.1_linux_x64.tar.gz. It matches the release's
+      # checksums.txt and GitHub's asset digest (checked 14 November 2026).
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - name: Check out repository with full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # 0 = fetch every commit on every branch, so the scan sees the
+          # whole history, not just the latest files.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Gitleaks and verify its checksum
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" version
+
+      # Scans the lines added by every commit on every branch. Any finding
+      # fails the job (exit code 1). Secrets are redacted in the log. No
+      # allowlist, baseline or config file is used. Binary files (such as
+      # .xlsx and .zip) are not scanned in this mode.
+      - name: Scan full Git history
+        run: |
+          "$RUNNER_TEMP/gitleaks" git --redact --verbose --no-banner --exit-code 1 .
+
   # Pending checks, added when the code they check exists:
   # - Python lint (ruff): not set up yet.
   # - Frontend lint: frontend/package.json has no lint script and no ESLint.
-  # - Secret scanning (gitleaks): planned for H8-H11.
