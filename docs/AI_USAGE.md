@@ -82,3 +82,30 @@ The event requires a description of how AI tools were used. Every agent session 
   - pip, setuptools and wheel are not audited, because `pip freeze` leaves them out. They are install tools, not app dependencies.
   - Python linting (ruff) is not set up.
 - **Human review:** None yet.
+
+## 2026-11-14 · Member D · Claude Code · Hash-chained audit log
+
+- **Task:** Add a hash-chained `records` table and a provisional `GET /audit/verify` endpoint. Member D chose the design: chain the records table itself, and add the endpoint now, marked provisional for A to confirm.
+- **Files changed:**
+  - `api/app/audit.py` (new)
+  - `api/app/main.py` (new endpoint)
+  - `api/tests/test_audit.py` (new)
+  - `api/README.md`, `README.md` (audit-log notes and status)
+  - `docs/AI_USAGE.md` (this entry)
+- **No new dependencies:** the code uses only Python's standard library (`hashlib`, `json`, `sqlite3`).
+- **Local checks:** Run on Windows with Python 3.14.3.
+  - `python -m pytest`: 22 passed, with 1 warning (the existing Starlette deprecation notice). That is 12 new tests plus the 10 existing ones.
+  - The new tests show that editing a stored field, deleting a middle record, or recomputing only the edited record's hash is detected.
+  - Two tests document the known limits: rewriting every later hash, and deleting the last record, are not detected.
+  - Live check with uvicorn and a scratch database holding 3 records:
+    - `GET /audit/verify` first returned `{"valid":true,"records_checked":3}`.
+    - After record 2's payload was edited directly in the file, it returned `{"valid":false,"first_broken_id":2,"reason":"record content does not match its stored hash"}`.
+- **Correction to the previous entry:** the replacement pip-audit method did run on GitHub Actions. It ran on commit `ba102a3` (PR #7) and passed on Python 3.11.18 and 3.14.10, with `packaging==26.3` in the audited list.
+- **Still pending:**
+  - The response shape of `/audit/verify` needs A's confirmation.
+  - The endpoint is open to any caller until demo access control exists.
+  - The chain covers only records added through `append_record()`. Measurement writes are not connected to it yet; they wait for the G1 contracts.
+  - Protection for the latest hash (an outside copy or a signature) is future work.
+  - Concurrent appends have not been tested. When appends overlap, one can fail and must be handled, for example by retrying. No retry exists yet.
+  - These tests have not yet run in CI.
+- **Human review:** None yet.
