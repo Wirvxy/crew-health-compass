@@ -1,13 +1,14 @@
 # Crew Health Compass API
 
-This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite transaction helper, a hash-chained audit log, and read-only endpoints for the NASA OSD-575 dataset. Owner: D.
+This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite transaction helper, a hash-chained audit log, read-only endpoints for the NASA OSD-575 dataset (Mode 2), and the Mode 1 check-in assessment against synthetic history. Owner: D. The frontend guide is [docs/mode1-api.md](../docs/mode1-api.md).
 
 | Path | Purpose |
 |---|---|
 | `app/main.py` | FastAPI app with `GET /health` and `GET /audit/verify`. It also includes the OSD-575 routes |
 | `app/db.py` | Database path setting and the `transaction()` helper |
 | `app/audit.py` | Hash-chained `records` table: append and verify |
-| `app/osd575.py` | Read-only `/datasets/osd575/...` endpoints built on A's `engine/`: astronauts, panels, measurements, postflight, trajectory and comparison (see [docs/osd575-api.md](../docs/osd575-api.md)) |
+| `app/osd575.py` | Read-only `/datasets/osd575/...` endpoints built on A's `engine/`: astronauts, panels, measurements, postflight, trajectory, comparison and the A4 passport (see [docs/osd575-api.md](../docs/osd575-api.md)) |
+| `app/monitoring.py` | Mode 1: `GET /api/monitoring/astronauts` and `POST /api/monitoring/assess`, built on A's M2 statistical detection and B's synthetic history (see [docs/mode1-api.md](../docs/mode1-api.md)) |
 | `tests/` | pytest tests. Database tests use temporary databases; OSD-575 tests read `download/` |
 | `requirements.txt` | Runtime dependencies, pinned |
 | `requirements-dev.txt` | Runtime and test dependencies, pinned |
@@ -35,9 +36,9 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Expected result: `69 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
+Expected result: `108 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
 
-A's engine has its own `unittest` suite (34 tests). Run it from the repository root:
+A's engine has its own `unittest` suite (73 tests; 5 are skipped unless the optional scikit-learn for the disabled M3 experiment is installed). Run it from the repository root:
 
 ```powershell
 api\.venv\Scripts\python.exe -m unittest discover -s engine
@@ -55,9 +56,9 @@ api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
 
 The old command, run from `api/`, now stops with `ModuleNotFoundError: No module named 'engine'`.
 
-At startup the server loads the OSD-575 CSVs once and runs A's analyses (about 0.2 s). If the data is missing or unusable:
+At startup the server loads the OSD-575 CSVs once and runs A's analyses (about 0.2 s), then loads B's synthetic Mode 1 history once (about 0.2 s). If either dataset is missing or unusable:
 - The server still starts, and `/health` still answers.
-- The `/datasets/osd575/...` endpoints return 503, naming the problem without any server path.
+- The affected endpoints (`/datasets/osd575/...` or `/api/monitoring/...`) return 503, naming the problem without any server path.
 - The error is written to the server log.
 
 Fix the files, then **restart the server**. It doesn't re-read them while running.
@@ -76,6 +77,7 @@ Expected result: a `status` column showing `ok`. Press Ctrl+C in the first windo
 |---|---|---|
 | `CREW_HEALTH_DB_PATH` | Path of the SQLite database file | `api/crew_health.db` (Git ignores `*.db`) |
 | `CREW_HEALTH_OSD575_DIR` | Folder holding the four OSD-575 `*_TRANSFORMED.csv` files | the repository's `download/` |
+| `CREW_HEALTH_MODE1_DATA` | Folder or ZIP holding B's synthetic `iss-synthetic-3000` dataset | the repository's `iss-synthetic-3000/` |
 
 To set it for the current PowerShell window, run `$env:CREW_HEALTH_DB_PATH = "C:\path\to\crew_health.db"`. The folder must already exist. The tests check that the path is read from this variable.
 
@@ -146,7 +148,7 @@ To try it, launch the server with `CREW_HEALTH_DB_PATH` pointing at a test datab
 
 ## Not built yet (on purpose)
 
-- Daily check-in measurement, status, history, catalogue, report and demo endpoints. These wait for the contracts at G1. The OSD-575 endpoints are separate and don't replace them.
+- Storing check-ins, and the status, history, catalogue, report and demo endpoints. These wait for the contracts at G1. The Mode 1 assessment works without storage, and the OSD-575 endpoints are separate.
 - Measurement tables, demo access control, plausibility checks, encryption and report signing.
 - Protection for the audit chain's latest hash (an outside copy or a signature).
 - Python linting (ruff) in CI, and deployment (Docker).

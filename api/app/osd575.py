@@ -1,10 +1,12 @@
 """Read-only endpoints for the NASA OSD-575 serum dataset.
 
 These endpoints only expose Person A's engine (engine/nasa_ingestion.py,
-engine/biomarker_analysis.py and engine/trajectory_analysis.py):
+engine/biomarker_analysis.py, engine/trajectory_analysis.py and
+engine/biological_passport.py):
 - At application startup, load_dataset() reads the local CSV files once and
   runs A's postflight (A2) and trajectory (A3) analyses.
-- The endpoints return A's serializer output unchanged.
+- The endpoints return A's serializer output unchanged. The A4 passport is
+  built from those cached A2 and A3 results.
 - No calculation is repeated here, and nothing is downloaded at runtime.
 
 If loading fails, the application still starts and /health still works. The
@@ -33,6 +35,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
+from engine.biological_passport import build_biological_passport
 from engine.biomarker_analysis import (
     BiomarkerAnalysis,
     analyze_postflight,
@@ -333,6 +336,34 @@ def crew_trajectory(crew_id: str, panel: Panel, biomarker: str) -> dict[str, Any
         "biomarker": biomarker,
         "trajectory": serialize_trajectory(trajectory),
     }
+
+
+@router.get("/astronauts/{crew_id}/passport")
+def crew_passport(crew_id: str, visit: str) -> dict[str, Any]:
+    """A4 biological passport for one crew member at one postflight visit.
+
+    Returns A's build_biological_passport() output unchanged. It is built
+    from the A2 and A3 results cached at startup, so no baseline or
+    trajectory is recalculated. In URLs, write '+' as %2B (visit=R%2B45).
+    """
+    data = _loaded()
+    _check_crew(data, crew_id)
+    postflight = [v for v in data.crew_visits[crew_id] if v.startswith("R")]
+    if visit not in postflight:
+        hint = " In URLs, write '+' as %2B (R%2B45)." if " " in visit else ""
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No postflight visit {visit!r} for {crew_id}. "
+                f"Postflight visits: {', '.join(postflight)}.{hint}"
+            ),
+        )
+    return build_biological_passport(
+        (result for series in data.analyses.values() for result in series),
+        data.trajectories.values(),
+        astronaut_id=crew_id,
+        selected_visit=visit,
+    )
 
 
 @router.get("/comparison")

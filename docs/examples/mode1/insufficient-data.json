@@ -1,0 +1,163 @@
+{
+  "request": {
+    "astronaut_id": "commander",
+    "timestamp": "2030-01-03T13:30:00Z",
+    "activity_context": "rest",
+    "indicators": {
+      "heart_rate": {
+        "value": "67",
+        "unit": "bpm"
+      },
+      "respiratory_rate": {
+        "value": "15",
+        "unit": "breaths/min"
+      },
+      "systolic_bp": {
+        "value": "100",
+        "unit": "mmHg"
+      },
+      "diastolic_bp": {
+        "value": "59",
+        "unit": "mmHg"
+      },
+      "sleep_duration": {
+        "value": "7.5",
+        "unit": "h"
+      },
+      "mood": "good"
+    }
+  },
+  "response": {
+    "astronaut_id": "commander",
+    "timestamp": "2030-01-03T13:30:00+00:00",
+    "activity_context": "rest",
+    "data_origin": "user",
+    "overall_status": "insufficient_data",
+    "affected_systems": [],
+    "body_marker": null,
+    "evidence": [
+      {
+        "indicator": "diastolic_bp",
+        "unit": "mmHg",
+        "value": "59",
+        "baseline": null,
+        "statistics": {
+          "mad": null,
+          "absolute_deviation": null,
+          "robust_z": null,
+          "status": "insufficient_data",
+          "anomaly": null,
+          "observation_count": 3,
+          "history_span_days": "2.000000",
+          "trend_slope_per_day": "0E+6",
+          "history_origins": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "indicator": "heart_rate",
+        "unit": "bpm",
+        "value": "67",
+        "baseline": null,
+        "statistics": {
+          "mad": null,
+          "absolute_deviation": null,
+          "robust_z": null,
+          "status": "insufficient_data",
+          "anomaly": null,
+          "observation_count": 3,
+          "history_span_days": "2.000000",
+          "trend_slope_per_day": "0E+6",
+          "history_origins": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "indicator": "mood",
+        "unit": "category",
+        "value": null,
+        "baseline": null,
+        "statistics": {
+          "mad": null,
+          "absolute_deviation": null,
+          "robust_z": null,
+          "status": "insufficient_data",
+          "anomaly": null,
+          "observation_count": 0,
+          "history_span_days": null,
+          "trend_slope_per_day": null,
+          "history_origins": []
+        },
+        "category": "good"
+      },
+      {
+        "indicator": "respiratory_rate",
+        "unit": "breaths/min",
+        "value": "15",
+        "baseline": null,
+        "statistics": {
+          "mad": null,
+          "absolute_deviation": null,
+          "robust_z": null,
+          "status": "insufficient_data",
+          "anomaly": null,
+          "observation_count": 0,
+          "history_span_days": null,
+          "trend_slope_per_day": null,
+          "history_origins": []
+        }
+      },
+      {
+        "indicator": "sleep_duration",
+        "unit": "h",
+        "value": "7.5",
+        "baseline": null,
+        "statistics": {
+          "mad": null,
+          "absolute_deviation": null,
+          "robust_z": null,
+          "status": "insufficient_data",
+          "anomaly": null,
+          "observation_count": 0,
+          "history_span_days": null,
+          "trend_slope_per_day": null,
+          "history_origins": []
+        }
+      },
+      {
+        "indicator": "systolic_bp",
+        "unit": "mmHg",
+        "value": "100",
+        "baseline": null,
+        "statistics": {
+          "mad": null,
+          "absolute_deviation": null,
+          "robust_z": null,
+          "status": "insufficient_data",
+          "anomaly": null,
+          "observation_count": 3,
+          "history_span_days": "2.000000",
+          "trend_slope_per_day": "0.5",
+          "history_origins": [
+            "synthetic"
+          ]
+        }
+      }
+    ],
+    "statistical_findings": [],
+    "optional_ml_findings": null,
+    "explanation": "Comparable history or historical variability is insufficient for statistical assessment.",
+    "next_action_protocol_id": null,
+    "insufficient_data": [
+      "diastolic_bp: 3 comparable readings available, 7 required.",
+      "heart_rate: 3 comparable readings available, 7 required.",
+      "mood: categorical mood has no numerical baseline.",
+      "respiratory_rate: no comparable historical measurement protocol for this context.",
+      "sleep_duration: no comparable historical measurement protocol for this context.",
+      "systolic_bp: 3 comparable readings available, 7 required."
+    ],
+    "approved_rule_id": null
+  }
+}
