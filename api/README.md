@@ -7,7 +7,7 @@ This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite
 | `app/main.py` | FastAPI app with `GET /health` and `GET /audit/verify`. It also includes the OSD-575 routes |
 | `app/db.py` | Database path setting and the `transaction()` helper |
 | `app/audit.py` | Hash-chained `records` table: append and verify |
-| `app/osd575.py` | Read-only `/datasets/osd575/...` endpoints built on A's `engine/` (see [docs/osd575-api.md](../docs/osd575-api.md)) |
+| `app/osd575.py` | Read-only `/datasets/osd575/...` endpoints built on A's `engine/`: astronauts, panels, measurements, postflight, trajectory and comparison (see [docs/osd575-api.md](../docs/osd575-api.md)) |
 | `tests/` | pytest tests. Database tests use temporary databases; OSD-575 tests read `download/` |
 | `requirements.txt` | Runtime dependencies, pinned |
 | `requirements-dev.txt` | Runtime and test dependencies, pinned |
@@ -35,9 +35,15 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Expected result: `45 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
+Expected result: `69 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
 
-CI (`.github/workflows/ci.yml`, job `backend`) runs the same install and test commands on Linux with Python 3.11 and 3.14, then runs pip-audit. A's own engine tests are not in CI yet. To run them, use this from the repository root: `api\.venv\Scripts\python.exe -m unittest discover -s engine`.
+A's engine has its own `unittest` suite (34 tests). Run it from the repository root:
+
+```powershell
+api\.venv\Scripts\python.exe -m unittest discover -s engine
+```
+
+CI (`.github/workflows/ci.yml`, job `backend`) runs both suites on Linux with Python 3.11 and 3.14: first A's engine tests from the repository root, then pytest from `api/`. It then runs pip-audit.
 
 ## Launch the server
 
@@ -48,6 +54,13 @@ api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
 ```
 
 The old command, run from `api/`, now stops with `ModuleNotFoundError: No module named 'engine'`.
+
+At startup the server loads the OSD-575 CSVs once and runs A's analyses (about 0.2 s). If the data is missing or unusable:
+- The server still starts, and `/health` still answers.
+- The `/datasets/osd575/...` endpoints return 503, naming the problem without any server path.
+- The error is written to the server log.
+
+Fix the files, then **restart the server**. It doesn't re-read them while running.
 
 The server listens on `http://127.0.0.1:8000`, which is reachable only from this computer. To check it, run this in a second PowerShell window:
 

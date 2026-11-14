@@ -183,3 +183,55 @@ The event requires a description of how AI tools were used. Every agent session 
   - A's `unittest` suite is not in CI.
   - The launch command changed: the server must now be started from the repository root.
 - **Human review:** None yet.
+
+## 2026-11-14 · Member D · Claude Code · OSD-575 A3 trajectories, startup loading, CI for both suites
+
+- **Task:**
+  - Integrate Person A's approved A3 commit `bdd9fe0` (postflight trajectory analysis).
+  - Add two read-only endpoints: one astronaut's trajectory, and a comparison of all four astronauts for one panel and biomarker.
+  - Move dataset loading to application startup.
+  - Make CI run both test suites.
+- **Git:**
+  - The finished A1/A2 API work was first committed as `aa5f9ca`.
+  - The exact commit `bdd9fe0`, whose parent is the already-merged `8475de9`, was then merged with `git merge --no-ff` (merge commit `3a8a738`). No conflicts, no cherry-pick, no rebase, and nothing merged into `main`.
+  - `engine/` is byte-identical to `bdd9fe0`.
+- **Files changed by D:**
+  - `api/app/osd575.py` (startup loading, two new routes)
+  - `api/app/main.py` (lifespan)
+  - `api/tests/test_osd575.py` (restructured and extended)
+  - `.github/workflows/ci.yml` (engine unittest step)
+  - `api/README.md`, `docs/osd575-api.md`, `docs/AI_USAGE.md` (this entry)
+  - No file in `engine/` was changed.
+- **Design:**
+  - **New endpoints:** `GET /datasets/osd575/astronauts/{crew_id}/trajectory` and `GET /datasets/osd575/comparison`. Both require `panel` and `biomarker`.
+  - **Reuse:** they use A's `analyze_trajectories`, `compare_astronauts` and `serialize_trajectory` unchanged. A `classification_note` states that closer, farther and mixed are not risk scores. The shapes are provisional until C confirms them.
+  - **Startup loading:** a FastAPI lifespan loads the CSVs and precomputes A2 and A3 once per process. This replaces the first-request loading described in the A1/A2 entry above.
+  - **Failure handling:**
+    - Missing or unusable data is logged as an error.
+    - The app still starts, `/health` stays a liveness check, and the dataset endpoints return 503 without server paths.
+    - Fixing the data requires a restart.
+  - **CI:** the backend job now runs `python -m unittest discover -s engine -v` from the repository root and `python -m pytest` from `api/`, on Python 3.11 and 3.14. The frontend and secret-scanning jobs are unchanged.
+- **Local checks:** Run on Windows with Python 3.14.3.
+  - Engine tests: 34 of 34 passed.
+  - Backend tests: 69 of 69 passed (22 non-dataset, 47 dataset), with 1 warning (the existing Starlette deprecation notice).
+  - The new tests cover:
+    - the C001 glucose trajectory (values 90, 84, 91 and 87; classification `mixed`)
+    - the four-astronaut glucose comparison (baselines 77.33, 73.00, 71.33 and 79.67)
+    - equality with A's serializer output
+    - missing observations as `null`, and insufficient baselines
+    - required and unknown parameters
+    - strict JSON for all 302 comparisons
+    - a single load at startup and none per request, and 503 without startup
+    - 503 and logging for missing and unreadable data
+    - the restart requirement
+    - loading with the network blocked
+  - The C001 glucose acceptance test for R+1 is preserved and passes.
+  - **Live server, started from the repository root:** both new endpoints returned 200, and the error cases returned the documented bodies.
+    - With an empty data folder, `/health` returned 200 and the dataset endpoints 503.
+    - Copying the CSVs into place while the server ran still gave 503, and a restart gave 200.
+    - An earlier attempt at this check was invalid: a leftover server from a previous run was still on port 8000, because stopping the venv launcher process did not stop its child. It was found, stopped and the check redone.
+- **Noted for A:** some A3 distance changes carry a 34-digit arithmetic remainder (C001 glucose `first_to_last_distance_change` = `-3.000000000000000000000000000000003`). It is reported, not changed.
+- **Still pending:**
+  - The response shapes are provisional until C confirms them, and the error format is TBD at G1.
+  - Linux and Python 3.11 are verified only by CI.
+- **Human review:** None yet. A requested a review of the integration PR.

@@ -6,16 +6,31 @@ measurement endpoints will be added once the team freezes the shared
 contracts at G1.
 """
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI
 
-from app import audit
+from app import audit, osd575
 from app.db import transaction
-from app.osd575 import router as osd575_router
 
-app = FastAPI(title="Crew Health Compass API", version="0.1.0")
-app.include_router(osd575_router)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Load and analyse the OSD-575 dataset once, before serving requests.
+
+    load_dataset() never raises for missing or unusable data. /health keeps
+    working, and the dataset endpoints answer 503 until the server is
+    restarted with valid files.
+    """
+    osd575.load_dataset()
+    yield
+    osd575.clear_dataset()
+
+
+app = FastAPI(title="Crew Health Compass API", version="0.1.0", lifespan=lifespan)
+app.include_router(osd575.router)
 
 
 @app.get("/health")
