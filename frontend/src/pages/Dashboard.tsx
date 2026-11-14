@@ -1,60 +1,55 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
+import TopBar from '../components/TopBar'
+import DailyCheckIn, { emptyDraft } from '../components/DailyCheckIn'
+import BodyMap from '../components/BodyMap'
+import SystemDetail from '../components/SystemDetail'
+import DataNotes from '../components/DataNotes'
+import { loadMockData, selectAssessment } from '../services/assessment'
+import { downloadReport } from '../services/report'
+import type { CheckIn, CrewDraft, DailyDraft, MockData, SystemId } from '../types/assessment'
 
-const systems = [
-  { name: 'Cardiovascular', short: 'Heart & circulation', level: 'amber', value: '72', unit: 'bpm', metric: 'Resting heart rate', values: [58,59,58,61,60,64,63,66,68,67,70,72] },
-  { name: 'Sleep & behavioural', short: 'Rest & wellbeing', level: 'green', value: '7.8', unit: 'hours', metric: 'Sleep duration', values: [7.2,7.8,7.5,8,7.6,7.4,7.9,8.1,7.7,8,7.6,7.8] },
-  { name: 'Metabolic', short: 'Energy & nutrition', level: 'green', value: 'Pending', unit: '', metric: 'Awaiting indicator catalogue', values: [] },
-  { name: 'Thermal', short: 'Body temperature', level: 'green', value: '36.7', unit: '\u00b0C', metric: 'Body temperature', values: [36.6,36.7,36.5,36.8,36.6,36.7,36.8,36.6,36.7,36.6,36.8,36.7] },
-]
+interface LinkState { mars: boolean; linked: boolean; queue: CheckIn[]; acknowledged: number }
+type LinkAction = { type: 'toggle' } | { type: 'restore' } | { type: 'queue'; record: CheckIn }
+function linkReducer(s: LinkState, a: LinkAction): LinkState {
+  if (a.type === 'toggle') return { ...s, mars: !s.mars, linked: false }
+  if (a.type === 'restore') return { ...s, linked: true, acknowledged: s.acknowledged + s.queue.length, queue: [] }
+  return { ...s, queue: [...s.queue, a.record] }
+}
+const stories = ['Pre-flight / L-92: review the first baseline sample.', 'Pre-flight / L-44: baseline uses all available pre-flight visits.', 'Launch context / L-3: the final pre-flight assay. No in-orbit data is inferred.', 'Return / R+1: review the post-flight response. Statuses are simulated.', 'Recovery / R+45: compare with the same personal baseline.', 'Recovery / R+82: follow the measurement without assuming full recovery.']
 
 export default function Dashboard() {
-  const [selected, setSelected] = useState(0)
-  const [checkIn, setCheckIn] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const s = systems[selected]
-  const min = Math.min(...s.values) - 1
-  const max = Math.max(...s.values) + 1
-  const points = s.values.map((v,i) => `${32+i*42},${155-(v-min)/(max-min)*115}`).join(' ')
-  return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <a className="brand" href="#overview" aria-label="Crew Health Compass home"><span className="brand-icon">&#8599;</span><span>CREW HEALTH<br/><strong>COMPASS</strong></span></a>
-        <span className="nav-caption">WORKSPACE</span>
-        <nav><a className="nav-active" href="#overview"><span>&#8599;</span> Health overview</a><a href="#systems"><span>&#8599;</span> Body systems</a><a href="#trend"><span>&#8599;</span> Trends & insights</a><button onClick={() => { setCheckIn(true); setSaved(false) }}><span>&#8599;</span> Daily check-in</button></nav>
-        <div className="mission-card"><span className="tiny-label">MISSION CONTEXT</span><strong>Mars transit</strong><span>Offline prototype</span><div className="orbit">&#9676;</div><small>Designed for care beyond Earth.</small></div>
-        <div className="profile"><span className="avatar">01</span><div><strong>Demo astronaut</strong><small>Crew member &#183; 01</small></div></div>
-      </aside>
-      <main id="overview">
-        <header className="topbar"><span>MISSION CONTROL <span className="slash">/</span> HEALTH OVERVIEW</span><span className="offline"><i/> Local demo</span></header>
-        <div className="demo-banner"><span>&#9672; &nbsp; SIMULATED DATA</span><span>Illustrative UI scenario &#183; No live assessment</span></div>
-        <section className="page-heading"><div><p className="eyebrow">YOUR DAILY PERSPECTIVE</p><h1>A clearer view of your health.</h1><p>Check in. Understand your signals. Know your next step.</p></div><button className="primary" onClick={() => { setCheckIn(true); setSaved(false) }}>+ Daily check-in</button></section>
-        <section className="summary-grid" aria-label="Illustrative health metrics">
-          {systems.map((system,i) => <button key={system.name} className={`metric-card ${selected===i?'selected':''}`} onClick={() => setSelected(i)}><div className="card-top"><span>{system.name}</span><span className={`status-dot ${system.level}`}/></div><div className="metric-value">{system.value} <small>{system.unit}</small></div><div className="metric-footer"><span>{system.metric}</span><span>&#8599;</span></div></button>)}
-        </section>
-        <div className="workspace-grid">
-          <section className="panel body-panel" id="systems"><div className="panel-heading"><div><p className="eyebrow">SYSTEM OVERVIEW</p><h2>Your body, at a glance</h2></div><span className="subtle-tag">DEMO</span></div>
-            <div className="body-stage"><div className="scan-ring ring-one"/><div className="scan-ring ring-two"/>
-              <svg className="body-figure" viewBox="0 0 300 420" role="img" aria-label="Human body outline. Select a system using the labelled controls.">
-                <defs><linearGradient id="bodyFill" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#27505a" stopOpacity=".5"/><stop offset="1" stopColor="#132a38" stopOpacity=".8"/></linearGradient></defs>
-                <path d="M150 21c-21 0-29 15-29 33 0 16 7 30 17 34v15l-38 14c-12 5-16 18-21 36L52 242c-4 14 10 19 16 7l40-86-5 86 12 139c1 17 20 17 22 0l13-110 13 110c2 17 21 17 22 0l12-139-5-86 40 86c6 12 20 7 16-7l-27-89c-5-18-9-31-21-36l-38-14V88c10-4 17-18 17-34 0-18-8-33-29-33Z" fill="url(#bodyFill)" stroke="#507b88" strokeWidth="1.4"/>
-                <path d="M150 104v146m-40-102h80m-84 37h88m-88 36h88" fill="none" stroke="#34515e" strokeDasharray="3 5"/>
-                {[[150,55],[163,150],[150,213],[113,173]].map(([cx,cy],i)=><g key={i} className={`body-hotspot ${selected===[1,0,2,3][i]?'active':''}`} role="button" tabIndex={0} aria-label={`Select ${systems[[1,0,2,3][i]].name}`} onClick={()=>setSelected([1,0,2,3][i])} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected([1,0,2,3][i])}}}><circle cx={cx} cy={cy} r="15" fill={i===1?'#e9b76c':'#68d8c5'} opacity=".12"/><circle cx={cx} cy={cy} r="5" fill={i===1?'#e9b76c':'#68d8c5'}/></g>)}
-              </svg>
-              <span className="body-note">ILLUSTRATIVE SYSTEM MAP</span>
-            </div>
-            <div className="system-controls">{systems.map((system,i)=><button key={system.name} aria-pressed={selected===i} className={selected===i?'active':''} onClick={()=>setSelected(i)}><span className={`status-dot ${system.level}`}/><span>{system.name}</span><span>&#8599;</span></button>)}</div>
-            <div className="legend"><span><i className="status-dot green"/> Green</span><span><i className="status-dot amber"/> Amber</span><span><i className="status-dot red"/> Red</span><small>Preset demo statuses</small></div>
-          </section>
-          <section className="panel detail-panel" id="trend"><div className="panel-heading"><div><p className="eyebrow">SYSTEM DETAIL</p><h2>{s.name}</h2></div><span className={`status-label ${s.level}`}>{s.level==='amber'?'Amber':'Green'} &#183; demo</span></div>
-            <p className="detail-subtitle">{s.short}</p><div className="trend-heading"><div><span>{s.metric}</span><strong>{s.value} <small>{s.unit}</small></strong></div><span className="subtle-tag">12 DEMO DAYS</span></div>
-            {s.values.length ? <svg className="trend-chart" viewBox="0 0 520 195" role="img" aria-label={`${s.metric}: simulated daily values ${s.values.join(', ')} ${s.unit}`}><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#63d5c3" stopOpacity=".22"/><stop offset="1" stopColor="#63d5c3" stopOpacity="0"/></linearGradient></defs>{[40,95,150].map(y=><line key={y} x1="26" x2="504" y1={y} y2={y} stroke="#253344" strokeDasharray="4 5"/>)}<polygon points={`32,165 ${points} 494,165`} fill="url(#chartFill)"/><polyline points={points} fill="none" stroke="#75ddcd" strokeWidth="2.5" strokeLinejoin="round"/>{s.values.map((v,i)=><circle key={i} cx={32+i*42} cy={155-(v-min)/(max-min)*115} r="3" fill="#75ddcd"/>)}<text x="30" y="188">Day 01</text><text x="240" y="188">Day 06</text><text x="458" y="188">Day 12</text><text x="30" y="25">Range {Math.min(...s.values)}–{Math.max(...s.values)} {s.unit}</text></svg> : <div className="empty-chart">Trend available after the team confirms this indicator.</div>}
-            <div className="insight"><span className="insight-icon">&#8599;</span><div><h3>{selected===0?'A changing pattern, made visible':'Every signal has a story'}</h3><p>{selected===0?'This illustrative heart-rate series rises from 58 to 72 bpm. The amber status is a preset for design review, not an engine result.':'These values and colours are illustrative fixtures for reviewing the interface.'}</p></div></div>
-            <div className="next-step"><p className="eyebrow">GUIDANCE & EXPLANATION</p><h3>Awaiting the team’s health catalogue</h3><p>Cited rules, explanations and next steps will appear here when the catalogue and assessment API are connected.</p><span className="pending">&#9675; &nbsp; Sources and escalation pending</span></div>
-          </section>
-        </div>
-        <footer><span>CREW HEALTH COMPASS</span><span>UI prototype &#183; Simulated data &#183; Not a diagnostic device</span></footer>
-      </main>
-      {checkIn && <div className="modal-backdrop"><section className="checkin-modal" role="dialog" aria-modal="true" aria-labelledby="checkin-title"><button className="close-modal" autoFocus onClick={()=>setCheckIn(false)} aria-label="Close check-in">&#215;</button><p className="eyebrow">DAILY CHECK-IN &#183; UI PREVIEW</p><h2 id="checkin-title">Make space for your health.</h2><p>The team is confirming indicator names, units and validation rules. The measurement form will use those contracts.</p><label>Practice note <textarea placeholder="Try the check-in interaction..." disabled={saved}/></label><button className="primary" disabled={saved} onClick={()=>setSaved(true)}>{saved?'Preview complete':'Try check-in preview'}</button><p role="status">{saved?'Interaction complete. Nothing was stored or assessed.':'Preview only. No measurements are collected.'}</p><button className="text-button" onClick={()=>setCheckIn(false)}>Back to overview &#8594;</button></section></div>}
-    </div>
-  )
+  const [data, setData] = useState<MockData | null>(null), [error, setError] = useState(''), [retry, setRetry] = useState(0)
+  const [crew, setCrew] = useState('C001'), [visit, setVisit] = useState('R+1'), [systemId, setSystem] = useState<SystemId>('cardio'), [markerId, setMarker] = useState<string | null>(null)
+  const [drafts, setDrafts] = useState<Record<string, CrewDraft>>({}), [submissions, setSubmissions] = useState<Record<string, CheckIn>>({})
+  const [role, setRole] = useState('surgeon'), [wall, setWall] = useState(false), [notes, setNotes] = useState(false), [story, setStory] = useState<number | null>(null), [message, setMessage] = useState('')
+  const [link, dispatch] = useReducer(linkReducer, { mars: false, linked: false, queue: [], acknowledged: 0 })
+  const draft = drafts[crew] || emptyDraft()
+  useEffect(() => { const controller = new AbortController(); setError(''); loadMockData(controller.signal).then(setData).catch(e => { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : 'Unable to load data.') }); return () => controller.abort() }, [retry])
+  const assessment = useMemo(() => data ? selectAssessment(data, crew, visit, !!drafts[crew]?.simulated) : null, [data, crew, visit, drafts])
+  useEffect(() => { if (!message) return; const timer = setTimeout(() => setMessage(''), 5500); return () => clearTimeout(timer) }, [message])
+  useEffect(() => { if (!link.mars || link.linked) return; const timer = setTimeout(() => { dispatch({ type: 'restore' }); setMessage('Simulated ground link restored. No data was transmitted.') }, 12 * 60 * 1000); return () => clearTimeout(timer) }, [link.mars, link.linked])
+  useEffect(() => { if (story == null || !data) return; setVisit(data.timepoints[story]); setMarker(null); const timer = setTimeout(() => setStory(story < 5 ? story + 1 : null), 5000); return () => clearTimeout(timer) }, [story, data])
+  useEffect(() => { function key(e: KeyboardEvent) { if (e.key === 'Escape') { setStory(null); return }; if (notes || ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'SUMMARY'].includes((e.target as HTMLElement).tagName)) return; if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); setVisit(v => data?.timepoints[Math.max(0, Math.min(5, data.timepoints.indexOf(v) + (e.key === 'ArrowRight' ? 1 : -1)))] || v); setMarker(null) }; if (e.key.toLowerCase() === 'd') setStory(s => s == null ? 0 : null) }; document.addEventListener('keydown', key); return () => document.removeEventListener('keydown', key) }, [data, notes])
+  function updateDraft(next: CrewDraft) { setDrafts(d => ({ ...d, [crew]: next })) }
+  function example() { if (!data) return; updateDraft(draft.simulated ? emptyDraft() : { simulated: true, values: Object.fromEntries(Object.entries(data.dailyDemo.values).map(([key, value]) => [key, String(value)])) as DailyDraft }); setMarker(null); setMessage(draft.simulated ? 'Synthetic example cleared.' : 'Explicit synthetic values loaded. They are not Inspiration4 measurements.') }
+  function submit(values: DailyDraft) { const record: CheckIn = { astronautId: crew, values: { ...values }, provenance: draft.simulated ? 'simulated' : 'user', timestamp: new Date().toISOString() }; setSubmissions(s => ({ ...s, [crew]: record })); if (link.mars && !link.linked) { dispatch({ type: 'queue', record }); setMessage('Saved in this tab session. Added to the simulated ground queue.') } else setMessage('Saved in this tab session. Assessment pending; nothing transmitted.') }
+  if (error) return <main className="page"><h1>Unable to load the prototype</h1><p>{error}</p><button onClick={() => setRetry(n => n + 1)}>Retry</button></main>
+  if (!data || !assessment) return <main className="page" role="status">Loading Crew Health Compass…</main>
+  const system = assessment.systems.find(s => s.id === systemId)!, marker = system.markers.find(m => m.id === markerId) || system.markers.find(m => m.id === system.defaultMarker) || null
+  return <div className={`${role === 'astronaut' ? 'astronaut' : ''} ${wall ? 'wall' : ''}`}>
+    <a href="#daily-checkin" className="sr-only skip-link">Skip to daily check-in</a>
+    <TopBar crew={crew} crews={data.crew} context={assessment.context} link={link.mars ? link.linked ? 'Live · simulated' : 'Delayed · simulated' : 'Offline'} onCrew={c => { setCrew(c); setMarker(null) }} />
+    <main className="page"><div className="page-title"><div><p className="eyebrow">YOUR DAILY PERSPECTIVE</p><h1>Your health,<br />in perspective.</h1><p>A moment to check in. A clearer picture of what comes next.</p></div><div className="tools">
+      <select id="role" aria-label="Role view" value={role} onChange={e => setRole(e.target.value)}><option value="astronaut">Astronaut view</option><option value="surgeon">Flight Surgeon view</option></select>
+      <button id="mars" aria-pressed={link.mars} onClick={() => dispatch({ type: 'toggle' })}>Mars-ready {link.mars ? 'On' : 'Off'}</button>
+      <button id="demo" aria-pressed={story != null} onClick={() => setStory(s => s == null ? 0 : null)}>{story == null ? '▷ Guided demo' : 'Ⅱ Stop demo'}</button>
+      <button id="export" className="surgeon-only" onClick={() => { downloadReport(assessment, submissions[crew]); setMessage('PDF downloaded locally. No data transmitted.') }}>↓ Export PDF</button>
+      <button id="wall" className="quiet" aria-pressed={wall} title="Large-screen mission wall" onClick={() => setWall(w => !w)}>⛶ <span className="sr-only">Mission wall</span></button>
+    </div></div><div className="link-info"><span>{draft.simulated ? 'SIMULATED DAILY SERIES · Recorded assays remain available · Mock API statuses' : 'OSD-575 recorded assays · Assessment statuses: simulated API fixtures'}</span><span id="latency">{link.mars ? `SIMULATED LINK · 12 min one-way · ${link.queue.length} queued · ${link.acknowledged} acknowledged` : 'LOCAL SESSION · No ground connection · No live telemetry'}</span>{link.mars && !link.linked && <button id="restore" onClick={() => { dispatch({ type: 'restore' }); setMessage('Link return simulated. Queue acknowledged locally; no data sent.') }}>Simulate link return</button>}</div>
+    <div className="four-zones"><DailyCheckIn key={crew} crew={crew} crews={data.crew} draft={draft} submissions={submissions} onChange={updateDraft} onExample={example} onSubmit={submit} />
+      <BodyMap systems={assessment.systems} selected={systemId} visit={visit} timepoints={data.timepoints} story={story == null ? '' : stories[story]} onSelect={id => { setSystem(id); setMarker(null) }} onVisit={v => { setVisit(v); setMarker(null) }} />
+      <SystemDetail crew={crew} visit={visit} system={system} marker={marker} submitted={submissions[crew]} baselineMethod={data.baselineMethod} onMarker={setMarker} onNotes={() => setNotes(true)} />
+    </div><footer><span>Research prototype, not a diagnostic device.</span><span className="mono">Cited data. Personal baselines. Explicit uncertainty.</span><button id="notes" className="text-button" onClick={() => setNotes(true)}>Data &amp; prototype notes ↗</button></footer></main>
+    {notes && <DataNotes onClose={() => setNotes(false)} />}{message && <div className="toast" role="status">{message}</div>}
+  </div>
 }

@@ -1,0 +1,7 @@
+interface Props { crew: string; crews: string[]; context: string; link: string; onCrew: (crew: string) => void }
+export default function TopBar({ crew, crews, context, link, onCrew }: Props) {
+  return <header className="topbar"><div className="brand"><svg className="brand-logo" viewBox="0 0 44 44" aria-hidden="true"><rect x="1" y="1" width="42" height="42" rx="11" fill="none" stroke="currentColor" /><circle cx="22" cy="22" r="11" fill="none" stroke="currentColor" /><path d="m27 15-3 10-8 4 3-10z" fill="none" stroke="currentColor" /><path d="M22 5v5m0 24v5M5 22h5m24 0h5" stroke="currentColor" /></svg><div><strong>Crew Health Compass</strong><small>PERSONAL BASELINE · MISSION PERSPECTIVE</small></div></div>
+    <div className="context"><strong>{context}</strong><small>Recorded serum archive · daily check-in is session-local</small></div><div className="crew-control"><span className="avatar">{crew.slice(-2)}</span><div><label htmlFor="crew">Astronaut profile</label><select id="crew" value={crew} onChange={e => onCrew(e.target.value)}>{crews.map(c => <option key={c}>{c}</option>)}</select></div></div>
+    <div className="top-right"><span className="link" role="status"><span className="link-dot" />{link}</span><span id="simulation-badge" className="badge simulated" title="Assessment statuses are simulated fixtures. Assay values are recorded data.">SIMULATED DATA</span></div>
+  </header>
+}
