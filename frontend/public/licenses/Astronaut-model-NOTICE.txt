@@ -1,0 +1,17 @@
+Astronaut 3D model
+
+"Astronaut" by Javi_DaviYT on Sketchfab
+https://sketchfab.com/3d-models/astronaut-287589e324b942b8be57dbd6c539b2ab
+
+License: Creative Commons Attribution 4.0 (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Changes made for this app:
+- The four textures used (base colour, normal, roughness, metallic) were
+  downscaled from 4096x4096 to 1024x1024 PNG to reduce download size.
+- The displacement texture is not included.
+- The FBX model file (source/astronaut.fbx) is used unmodified.
+
+Provenance note: the Sketchfab page describes the model as "Cool astronaut I
+found!", so the original creator has not been verified. The credit above
+follows the license shown on the Sketchfab page.

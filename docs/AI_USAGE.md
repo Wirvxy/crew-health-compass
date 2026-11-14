@@ -235,3 +235,35 @@ The event requires a description of how AI tools were used. Every agent session 
   - The response shapes are provisional until C confirms them, and the error format is TBD at G1.
   - Linux and Python 3.11 are verified only by CI.
 - **Human review:** None yet. A requested a review of the integration PR.
+
+## 2026-11-14 · Member D · Claude Code · 3D astronaut fixes and new model (frontend/, with C's approval)
+
+- **Task:** Fix two frontend bugs found while reviewing C's commit `e471f37`, and replace the hand-drawn astronaut with the Sketchfab model D chose. D reported that C approved these edits in `frontend/`.
+- **Branch:** `d-astronaut-fixes`, built on C's branch `c-osd575-demo-fixes` (`e471f37`).
+- **Files changed:**
+  - `frontend/src/components/Astronaut3D.tsx` (crash fix, then rewritten as a three.js viewer)
+  - `frontend/src/pages/Dashboard.tsx` (hidden-demo fix)
+  - `frontend/package.json` and `frontend/package-lock.json` (three.js)
+  - `frontend/public/models/astronaut/` (model and textures, new)
+  - `frontend/public/licenses/Astronaut-model-NOTICE.txt` (new)
+  - `docs/AI_USAGE.md` (this entry)
+- **Fixes:**
+  - **Drag crash:** dragging the 3D astronaut could unmount the whole app. Pointer-move state updates read a ref that pointer-up had already set to null. This was reproduced every time before the fix and never after it.
+  - **Hidden demo:** the guided demo kept running while the dashboard was hidden, and Escape could not stop it from NASA. It now stops when the workspace is hidden.
+- **New model:**
+  - "Astronaut" by Javi_DaviYT (Sketchfab), CC BY 4.0, downloaded by D. The original creator is unverified: the page says "Cool astronaut I found!".
+  - The FBX is used unmodified. Four textures were downscaled from 4096 px to 1024 px, cutting the files from 80 MB to 6.1 MB. The displacement map is not included.
+  - The files are served from the app, so it works offline.
+  - three.js 0.187.0 (MIT) and @types/three 0.187.0 (MIT) are pinned to exact versions, with 0 vulnerabilities from npm audit. The JavaScript bundle grew by about 154 KB gzipped.
+  - The viewer shows the required attribution, and a clear message if the model or WebGL is unavailable.
+- **Local checks:** Windows, Node 24, production build served by `vite preview` with the local backend.
+  - The build passes, with Vite's warning about bundles over 500 KB.
+  - The model loads from the local server only, with no external requests.
+  - It renders upright and facing front, framed with space around it.
+  - Drag, arrow keys, zoom and reset work.
+  - Arrow keys on the 3D view no longer move the dashboard's visit.
+  - Five rapid drags cause no errors.
+  - There are no console errors or warnings.
+  - NASA regression: C001 glucose R+1 still shows 90 mg/dL, 77.33, +12.67 and within, and the C003 `activin_a` L-44 gap is unchanged.
+- **Still pending:** the rendering has not been checked on other browsers or on a phone.
+- **Human review:** None yet. C's review is requested on the PR.
