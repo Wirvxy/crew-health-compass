@@ -267,3 +267,34 @@ The event requires a description of how AI tools were used. Every agent session 
   - NASA regression: C001 glucose R+1 still shows 90 mg/dL, 77.33, +12.67 and within, and the C003 `activin_a` L-44 gap is unchanged.
 - **Still pending:** the rendering has not been checked on other browsers or on a phone.
 - **Human review:** None yet. C's review is requested on the PR.
+
+## 2026-11-14 · Member D · Claude Code · Sidebar navigation, shared heading and one palette (frontend/, with C's approval)
+
+- **Task:** D asked for a left sidebar that splits the one long page into separate pages, the same heading on every page, and the "Check-in & body" colour palette on every page. D reported that C approved these edits in `frontend/`. Every existing feature stays; only where it appears changes.
+- **Branch:** `d-sidebar-layout`, from `main` at `2169c23`.
+- **Files changed:**
+  - `frontend/src/components/Sidebar.tsx` and `frontend/src/components/PageHeader.tsx` (new)
+  - `frontend/src/App.tsx` (sidebar layout instead of the two top buttons)
+  - `frontend/src/pages/Dashboard.tsx` (split into a check-in section and a body section)
+  - `frontend/src/components/TopBar.tsx` (brand and badge moved out)
+  - `frontend/src/pages/NasaDataset.tsx` (own heading removed, chart colours)
+  - `frontend/src/index.css` (sidebar styles, and the NASA styles redone in the check-in palette)
+  - `docs/AI_USAGE.md` (this entry)
+- **Design:**
+  - **Three pages:** NASA lab data (still the first page), Daily check-in, and Body & systems (3D astronaut, system cards, visits and the system detail).
+  - **Shared heading:** every page uses the same heading layout. Its badge says SIMULATED DATA on the two prototype pages and RECORDED DATA · OSD-575 on the NASA page, so recorded data is never labelled as simulated.
+  - **State kept:** pages are hidden, not removed, so check-in drafts and the loaded 3D model survive page changes.
+  - **Guided demo:** the demo, its button and the arrow-key and D shortcuts now belong to the Body & systems page. The demo stops when that page is hidden.
+  - **Icons and accents (D's follow-up request):**
+    - Each page has a simple line icon drawn for this app; no icon library was added.
+    - Each page also has its own accent colour, used for icons, the heading, panel labels and hover glows: sky blue for NASA, mint for check-in, lavender for body.
+    - Accents stay apart from status colours. The check-in page shows no statuses. The body page, which shows green, amber and red statuses, uses lavender.
+    - Pages fade in when opened. Users who turn off animations in their system settings get no motion.
+- **Local checks:** Windows, Node 24, Vite dev server with the local backend.
+  - The production build passes, with Vite's existing warning about bundles over 500 KB.
+  - At 1440, 1100 and 375 px wide, each page shows the right sections with no sideways scrolling. The sidebar moves to the top on narrow screens.
+  - A check-in value survives switching pages. Arrow keys change the visit on the body page only. The demo stops when you leave that page. The 3D model is still drawn when you come back.
+  - NASA regression: C001 glucose R+1 still shows 90 mg/dL.
+  - **Correction to the previous entry:** the console is not free of warnings. three.js's FBX loader prints three warnings every time the astronaut model loads (two unsupported texture types are skipped, and extra skinning weights are dropped). This has been true since the model was added. No errors appear.
+- **Still pending:** not checked on other browsers or on a real phone.
+- **Human review:** None yet. C's review is needed before merging.
