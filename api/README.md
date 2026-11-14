@@ -1,13 +1,14 @@
 # Crew Health Compass API
 
-This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite transaction helper, and a hash-chained audit log. Owner: D.
+This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite transaction helper, a hash-chained audit log, and read-only endpoints for the NASA OSD-575 dataset. Owner: D.
 
 | Path | Purpose |
 |---|---|
-| `app/main.py` | FastAPI app with `GET /health` and `GET /audit/verify` |
+| `app/main.py` | FastAPI app with `GET /health` and `GET /audit/verify`. It also includes the OSD-575 routes |
 | `app/db.py` | Database path setting and the `transaction()` helper |
 | `app/audit.py` | Hash-chained `records` table: append and verify |
-| `tests/` | pytest tests, all using temporary databases |
+| `app/osd575.py` | Read-only `/datasets/osd575/...` endpoints built on A's `engine/` (see [docs/osd575-api.md](../docs/osd575-api.md)) |
+| `tests/` | pytest tests. Database tests use temporary databases; OSD-575 tests read `download/` |
 | `requirements.txt` | Runtime dependencies, pinned |
 | `requirements-dev.txt` | Runtime and test dependencies, pinned |
 | `pytest.ini` | Tells pytest where the tests and the code are |
@@ -34,15 +35,19 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Expected result: `22 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)).
+Expected result: `45 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
 
-CI (`.github/workflows/ci.yml`, job `backend`) runs the same install and test commands on Linux with Python 3.11 and 3.14, then runs pip-audit.
+CI (`.github/workflows/ci.yml`, job `backend`) runs the same install and test commands on Linux with Python 3.11 and 3.14, then runs pip-audit. A's own engine tests are not in CI yet. To run them, use this from the repository root: `api\.venv\Scripts\python.exe -m unittest discover -s engine`.
 
 ## Launch the server
 
+Run this **from the repository root**, not from `api/`, so that A's `engine/` can be imported:
+
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn app.main:app
+api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
 ```
+
+The old command, run from `api/`, now stops with `ModuleNotFoundError: No module named 'engine'`.
 
 The server listens on `http://127.0.0.1:8000`, which is reachable only from this computer. To check it, run this in a second PowerShell window:
 
@@ -57,6 +62,7 @@ Expected result: a `status` column showing `ok`. Press Ctrl+C in the first windo
 | Environment variable | Meaning | Default |
 |---|---|---|
 | `CREW_HEALTH_DB_PATH` | Path of the SQLite database file | `api/crew_health.db` (Git ignores `*.db`) |
+| `CREW_HEALTH_OSD575_DIR` | Folder holding the four OSD-575 `*_TRANSFORMED.csv` files | the repository's `download/` |
 
 To set it for the current PowerShell window, run `$env:CREW_HEALTH_DB_PATH = "C:\path\to\crew_health.db"`. The folder must already exist. The tests check that the path is read from this variable.
 
@@ -127,7 +133,7 @@ To try it, launch the server with `CREW_HEALTH_DB_PATH` pointing at a test datab
 
 ## Not built yet (on purpose)
 
-- Measurement, status, history, catalogue, report and demo endpoints. These wait for the contracts at G1.
+- Daily check-in measurement, status, history, catalogue, report and demo endpoints. These wait for the contracts at G1. The OSD-575 endpoints are separate and don't replace them.
 - Measurement tables, demo access control, plausibility checks, encryption and report signing.
 - Protection for the audit chain's latest hash (an outside copy or a signature).
 - Python linting (ruff) in CI, and deployment (Docker).

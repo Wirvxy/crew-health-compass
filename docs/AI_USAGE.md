@@ -136,3 +136,50 @@ The event requires a description of how AI tools were used. Every agent session 
   - The run on `main` after the merge (`a224417`) reported success; its logs were not inspected.
   - PR #9 was merged at 16:03 UTC, about 40 seconds after it opened. No human review is recorded.
 - **Human review:** None yet.
+
+## 2026-11-14 · Member D · Claude Code · OSD-575 dataset API (integration of A's engine)
+
+- **Task:** Integrate Person A's approved engine commit `8475de9`, then add four read-only endpoints under `/datasets/osd575/`: astronauts, panels and biomarkers, measurement history, and postflight analysis. A approved the integration before any of A's files were merged.
+- **Git:**
+  - Branch `d-osd575-api`, created from `main` at `a81fcf1`.
+  - The exact approved commit was merged with `git merge --no-ff` (merge commit `3d00b9c`). There was no cherry-pick or rebase, and nothing was merged into `main`.
+  - `engine/` is byte-identical to `8475de9`.
+  - A's later commit on `engine-main` (`bdd9fe0`, trajectory analysis) was **not** included, because it wasn't approved.
+- **Files changed by D:**
+  - `api/app/osd575.py` (new)
+  - `api/app/main.py` (includes the router)
+  - `api/pytest.ini` (adds the repository root to the import path)
+  - `api/tests/test_osd575.py` (new)
+  - `api/README.md` (new launch command and settings)
+  - `docs/osd575-api.md` (new endpoint guide for Person C)
+  - `docs/AI_USAGE.md` (this entry)
+  - No file in `engine/` was changed.
+- **Design:**
+  - The API uses A's `load_osd575`, `group_measurements`, `analyze_postflight`, `serialize_measurement` and `serialize_analysis`. It does not repeat any calculation.
+  - The data is loaded and analysed once per process, protected by a lock, and a failed load is not cached.
+  - A missing CSV returns a 503 that names the file but no server path. Nothing is downloaded at runtime.
+  - Responses add only an envelope (`study_id`, `provenance`, a "descriptive, not clinical" `note`, the request echo, and `count`). No risk levels or advice are added.
+- **Local checks:** Run on Windows with Python 3.14.3.
+  - A's engine tests (`python -m unittest discover -s engine`): 25 of 25 passed.
+  - Backend tests (`python -m pytest`): 45 of 45 passed (22 existing, 23 new), with 1 warning (the existing Starlette deprecation notice).
+  - C001 glucose at R+1: 90 mg/dL, baseline 77.33 and change +12.67 (within ±0.005), lab comparison `within`.
+    - This was checked against the raw CSV (preflight values 83, 80 and 69), and against A's serializer output, which matched exactly.
+  - Also tested:
+    - Missing values (`null`, with status and raw text) and insufficient baselines.
+    - Unknown or malformed crew IDs (404), unknown biomarkers (404) and unknown panels (422).
+    - Strict JSON for all 4 crew members × 4 panels.
+    - A missing data file (503).
+    - Loading with the network blocked.
+    - Loading once across many requests.
+  - One test first failed for a test-design reason: on Windows, the test client's own event loop opens a local socket pair, which tripped the network block. The block now covers only loading and analysis.
+  - Live check with uvicorn started from the repository root (`--app-dir api`):
+    - All four endpoints returned 200.
+    - The error cases returned the documented bodies.
+    - With the data folder empty, the dataset endpoints returned 503 while `/health` still returned 200.
+    - The examples in `docs/osd575-api.md` come from these responses.
+- **Still pending:**
+  - The response envelopes and error messages are provisional; A and C must confirm them, and the error format is TBD at G1.
+  - Not yet run in CI or on Linux.
+  - A's `unittest` suite is not in CI.
+  - The launch command changed: the server must now be started from the repository root.
+- **Human review:** None yet.

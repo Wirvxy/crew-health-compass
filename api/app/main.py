@@ -1,7 +1,8 @@
 """FastAPI application.
 
-So far there are only a liveness endpoint and the audit-chain check.
-Measurement endpoints will be added once the team freezes the shared
+So far it has a liveness endpoint, the audit-chain check, and read-only
+endpoints for the NASA OSD-575 dataset (app/osd575.py). Daily check-in
+measurement endpoints will be added once the team freezes the shared
 contracts at G1.
 """
 
@@ -11,8 +12,10 @@ from fastapi import FastAPI
 
 from app import audit
 from app.db import transaction
+from app.osd575 import router as osd575_router
 
 app = FastAPI(title="Crew Health Compass API", version="0.1.0")
+app.include_router(osd575_router)
 
 
 @app.get("/health")
