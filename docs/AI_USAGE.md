@@ -58,20 +58,27 @@ The event requires a description of how AI tools were used. Every agent session 
 
 ## 2026-11-14 · Member D · Claude Code · Backend CI job
 
-- **Task:** Add a `backend` job to the CI workflow. On Linux, with Python 3.11 and 3.14, it installs `api/requirements-dev.txt`, runs the tests, and audits the dependencies with pip-audit.
+- **Task:** Add a `backend` job to the CI workflow. On Linux, with Python 3.11 and 3.14, it installs `api/requirements-dev.txt`, runs the tests, and audits the installed dependencies with pip-audit.
 - **Files changed:**
   - `.github/workflows/ci.yml` (new `backend` job)
   - `api/README.md` (CI and vulnerability notes)
   - `docs/AI_USAGE.md` (this entry)
 - **New tool:** pip-audit 2.10.1 (Apache-2.0, maintained by PyPA). CI installs it for the audit step only. It is not an app dependency.
 - **Local checks:** Run on Windows with Python 3.14.3.
-  - `python -m pip_audit -r requirements-dev.txt`: no known vulnerabilities in the 22 packages it listed (exit 0). The list did not include `packaging`, which the test environment installs. The reason is not yet explained.
-  - Negative test: a throwaway requirements file pinning `requests==2.19.0`, checked without installing anything, made pip-audit exit 1.
+  - First audit method, `python -m pip_audit -r requirements-dev.txt`: no known vulnerabilities in the 22 packages it listed (exit 0). That list left out `packaging`, which the test environment installs.
+  - Cause of the gap, found from pip-audit's source and reproduced step by step:
+    - In this mode, pip-audit first installs `wheel` in its own temporary environment, and `wheel` 0.48.0 requires `packaging`.
+    - It then audits only the packages a dry-run install would still add. `packaging` was already present, so it was skipped without any warning.
+  - Replacement method: save the installed list with `pip freeze`, then run `pip_audit -r <list> --no-deps --disable-pip`. It audited all 23 installed packages, including `packaging` 26.3: no known vulnerabilities, none skipped (exit 0).
+  - Negative test: a throwaway requirements file pinning `requests==2.19.0`, checked with the same flags, made pip-audit exit 1.
   - `python -m pytest`: 10 passed, with 1 warning.
-  - Text checks on the workflow file: no tabs, LF line endings, all 4 actions pinned to full commit SHAs, and no `|| true` or `continue-on-error`.
+  - Text checks on the workflow file: no tabs, LF line endings, all 4 actions pinned to full commit SHAs, and no `|| true` or `continue-on-error`. The backend job uses `shell: bash`, so a failure anywhere in a pipe fails the step.
+- **GitHub Actions result (first audit method):** the CI run on commit `4b8ed20` passed all three jobs.
+  - The backend passed 10 tests each on CPython 3.11.18 and 3.14.10 (Linux, `ubuntu-26.04`).
+  - That run used the first audit method, so it did not audit `packaging`.
 - **Still pending:**
-  - The backend job has not run on GitHub Actions yet, so Linux and Python 3.11 are still unverified.
+  - The replacement audit method has not yet run on GitHub Actions.
   - Python 3.12 and 3.13 are not in the test matrix.
-  - pip-audit's coverage is not confirmed to be complete: `packaging` is missing from its list, for a reason not yet explained.
+  - pip, setuptools and wheel are not audited, because `pip freeze` leaves them out. They are install tools, not app dependencies.
   - Python linting (ruff) is not set up.
 - **Human review:** None yet.

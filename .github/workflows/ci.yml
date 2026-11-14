@@ -67,6 +67,9 @@ jobs:
     defaults:
       run:
         working-directory: api
+        # Explicit bash adds "-o pipefail", so a failure anywhere in a pipe
+        # (such as pip freeze | tee) fails the step.
+        shell: bash
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -81,17 +84,24 @@ jobs:
       - name: Install pinned dependencies
         run: python -m pip install -r requirements-dev.txt
 
+      # Save (and print) the exact packages the tests run with, before
+      # pip-audit and its own dependencies are installed.
+      - name: Record installed packages
+        run: python -m pip freeze | tee "$RUNNER_TEMP/installed.txt"
+
       - name: Run tests
         run: python -m pytest
 
       - name: Install pip-audit
         run: python -m pip install pip-audit==2.10.1
 
-      # Audits the packages pip-audit resolves from requirements-dev.txt and
-      # fails on any known vulnerability (pip-audit has no severity
-      # threshold). Coverage has a known gap; see api/README.md.
-      - name: Audit dependencies (fail on any known vulnerability)
-        run: python -m pip_audit -r requirements-dev.txt
+      # Audit that exact list and fail on any known vulnerability (pip-audit
+      # has no severity threshold). --no-deps --disable-pip stop pip-audit
+      # from re-resolving the list in its own temporary environment, where
+      # packages that are already present there (packaging, via wheel) are
+      # silently left out.
+      - name: Audit installed dependencies (fail on any known vulnerability)
+        run: python -m pip_audit -r "$RUNNER_TEMP/installed.txt" --no-deps --disable-pip
 
   # Pending checks, added when the code they check exists:
   # - Python lint (ruff): not set up yet.

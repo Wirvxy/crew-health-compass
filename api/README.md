@@ -91,10 +91,10 @@ No tables exist yet. The schema waits for the contracts the team freezes at G1.
 | `httpx==0.28.1` | BSD-3-Clause | Needed by FastAPI's `TestClient` (tests only) |
 
 - **Sub-dependencies:** these four install 19 more packages, all under permissive licences: MIT, BSD, Apache-2.0, PSF-2.0, and MPL-2.0 for `certifi`. Only the four direct dependencies are pinned. Sub-dependency versions are chosen at install time.
-- **Vulnerabilities:** CI runs `pip-audit -r requirements-dev.txt`, which fails on any known vulnerability. Coverage is **not confirmed to be complete**:
-  - A local run with pip-audit 2.10.1 on 14 November 2026 listed 22 packages and found no known vulnerabilities.
-  - That list did not include `packaging`, which the test environment installs because pytest needs it.
-  - The reason is not yet explained, so treat `packaging` as unaudited.
+- **Vulnerabilities:** after installing the requirements, CI saves the exact installed list with `pip freeze`. It then audits that list with `pip-audit -r <list> --no-deps --disable-pip`, which fails on any known vulnerability.
+  - This replaced `pip-audit -r requirements-dev.txt`, which silently left out `packaging`. That mode builds its own temporary environment, installs `wheel` there (which brings `packaging`), and then audits only the packages it would still need to install.
+  - A local run of the new method with pip-audit 2.10.1 on 14 November 2026 audited all 23 installed packages, including `packaging` 26.3, and found no known vulnerabilities.
+  - `pip freeze` leaves out pip, setuptools and wheel. Those are install tools, not app dependencies, and are not audited.
 - **Telemetry:** FastAPI 0.162.7 installs `opentelemetry-api`. It can export data only when `FASTAPI_OTEL_AUTO_CONFIGURE=true` and an export endpoint are set *and* the OpenTelemetry SDK and exporter packages are installed. None of these are present, so nothing is sent.
 
 ## Known issues
