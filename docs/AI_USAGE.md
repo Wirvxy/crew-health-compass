@@ -534,7 +534,7 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
 - **Docs:** `docs/mode1-api.md` (checks, 415), `docs/examples/mode1/errors.json` (real 415 and 422 responses), `api/README.md` and `AGENTS.md`/`CLAUDE.md` (errors, still-open items).
 - **Approval:** D asked for the fixes, chose logic checks only, and confirmed that Iliass Barrou (A) approved this contract change.
 - **Checks:**
-  - pytest: 151 passed (126 before, plus 25 new). Engine: 78 tests OK, 5 skipped.
+  - pytest: 152 passed (126 before, plus 26 new). On Linux with Python 3.14, 100,000 nested brackets parse without overflowing, so one test forces the overflow to check the 422 message on every platform. Engine: 78 tests OK, 5 skipped.
   - `npm run build` passes.
   - Re-run of the Playwright suite: 50/50, no favicon 404.
   - API re-test: 415 for `text/plain`, 422 for every impossible reading and for deep JSON, and no 500 in the log.

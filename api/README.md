@@ -38,7 +38,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Expected result: `151 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
+Expected result: `152 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
 
 A's engine has its own `unittest` suite (78 tests; 5 are skipped unless the optional scikit-learn for the disabled M3 experiment is installed). Run it from the repository root:
 

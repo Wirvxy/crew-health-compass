@@ -9,6 +9,7 @@ data somewhere else on purpose. The history ends on 2030-06-29.
 import json
 import socket
 import sys
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -171,8 +172,20 @@ def test_json_with_a_charset_is_accepted(client):
 
 
 def test_deeply_nested_json_is_422_not_500(client):
+    # Whether this depth overflows the parser depends on the platform's stack
+    # (it does on Windows, not on Linux with Python 3.14). Either way: 422.
     depth = 100_000
     response = client.post(URL, content="[" * depth + "]" * depth, headers=JSON)
+    assert response.status_code == 422
+    assert response.json()["detail"].startswith("Invalid check-in:")
+
+
+def test_parser_recursion_error_is_422(client, monkeypatch):
+    # Force the overflow on every platform. Only monitoring's own json is replaced.
+    def overflow(*args, **kwargs):
+        raise RecursionError("maximum recursion depth exceeded")
+    monkeypatch.setattr(monitoring, "json", SimpleNamespace(loads=overflow))
+    response = client.post(URL, json=check_in())
     assert response.status_code == 422
     assert response.json()["detail"] == "Invalid check-in: the JSON is nested too deeply."
 
