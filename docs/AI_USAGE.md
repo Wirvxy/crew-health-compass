@@ -405,3 +405,21 @@ The event requires a description of how AI tools were used. Every agent session 
   - B's `data` branch.
   - The missing repository licence, which is a team decision.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Project licence (Apache 2.0) and NOTICE
+
+- **Task:** choose the best licence for the competition and add it. D asked for this after the branch cleanup.
+- **Research:**
+  - The challenge page says nothing about licences.
+  - The [2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/) say original content must be freely available or under an OSI open-source licence, and "If you do not specify a specific OSI compliant license, NASA will distribute your original content under an Apache 2.0 license".
+  - Third-party materials need their licences documented, and every source must be cited.
+- **Branch `d-license-apache`:**
+  - `LICENSE`: the official Apache 2.0 text from apache.org (SHA-256 `cfc7749b…`).
+  - `NOTICE` (new): project copyright, plus every third-party item with its licence: OSD-575 data, the NASA sources behind the synthetic data, the Inter font, the 3D model, and the npm and pip dependencies.
+  - README licence note.
+  - The dependency licences were read from the installed packages: all MIT, BSD-3-Clause or Apache-2.0.
+- **Same session:** #22 and #23 were already merged, and CI passed on `main`. Deleted branches `d-frontend-engine`, `d-mode1-passport-api`, `d-repo-cleanup` and `data`. Every file on `data` was byte-identical to a file on `main` except one unused Mars radiation CSV, which GitHub still keeps through closed PR #18.
+- **Open:**
+  - The 3D model's original creator is unverified, and the Space Apps terms exclude material the team has no rights to.
+  - The OSD-575 terms of use still need B's check.
+- **Human review:** None yet.
