@@ -1,6 +1,6 @@
 # Crew Health Compass API
 
-This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite transaction helper, a hash-chained audit log, read-only endpoints for the NASA OSD-575 dataset (Mode 2), and the Mode 1 check-in assessment against synthetic history. Owner: D. The frontend guide is [docs/mode1-api.md](../docs/mode1-api.md).
+This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite transaction helper, a hash-chained audit log, read-only endpoints for the NASA OSD-575 dataset (Mode 2), and the Mode 1 check-in assessment against synthetic history. Owner: Monssif El Haouari (D). The frontend guide is [docs/mode1-api.md](../docs/mode1-api.md).
 
 | Path | Purpose |
 |---|---|

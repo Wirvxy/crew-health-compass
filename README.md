@@ -29,8 +29,8 @@ frontend/ (React)  ──►  api/ (FastAPI, the trust boundary)  ──►  eng
 ```
 
 1. The browser sends a check-in to `POST /api/monitoring/assess`. In development, Vite's proxy forwards it to the API on the same origin.
-2. The API validates it with A's contract (`validate_manual_check_in`). Invalid input gets HTTP 422.
-3. A's engine compares it with the latest 14 earlier readings of the same astronaut, context and measurement protocol (median and MAD, robust z-score). It never mixes rest and exercise readings.
+2. The API validates it with Iliass Barrou's contract (`validate_manual_check_in`). Invalid input gets HTTP 422.
+3. Iliass Barrou's engine compares it with the latest 14 earlier readings of the same astronaut, context and measurement protocol (median and MAD, robust z-score). It never mixes rest and exercise readings.
 4. The UI shows the backend's `overall_status`, `body_marker` and `evidence` without recalculating anything.
 5. Mode 2 reads the A1–A4 results, which the API computes once at startup.
 
@@ -40,13 +40,13 @@ The API also keeps a **hash-chained audit log** (`GET /audit/verify`). Check-ins
 
 | Path | Contents | Owner |
 |---|---|---|
-| `engine/` | Analytics: OSD-575 ingestion and analyses (A1–A4), Mode 1 contracts and detection, guides and JSON examples | A |
-| `iss-synthetic-3000/` | Synthetic ISS dataset for Mode 1 (see its README) | B |
-| `download/` | NASA OSD-575 files: the source data for Mode 2 (see its README) | B (*proposal*) |
-| `frontend/` | React + Vite + TypeScript user interface | C |
-| `api/` | FastAPI app: Mode 1 and Mode 2 endpoints, SQLite audit log, tests | D |
-| `docs/` | API guides for the frontend, JSON examples, screenshots, AI-usage log | D (*proposal*) |
-| `.github/workflows/` | CI: frontend build and audit, backend and engine tests, dependency audit, secret scan | D |
+| `engine/` | Analytics: OSD-575 ingestion and analyses (A1–A4), Mode 1 contracts and detection, guides and JSON examples | Iliass Barrou |
+| `iss-synthetic-3000/` | Synthetic ISS dataset for Mode 1 (see its README) | Ayman El Kerboubi |
+| `download/` | NASA OSD-575 files: the source data for Mode 2 (see its README) | Ayman El Kerboubi (*proposal*) |
+| `frontend/` | React + Vite + TypeScript user interface | Taha Errassif |
+| `api/` | FastAPI app: Mode 1 and Mode 2 endpoints, SQLite audit log, tests | Monssif El Haouari |
+| `docs/` | API guides for the frontend, JSON examples, screenshots, AI-usage log | Monssif El Haouari (*proposal*) |
+| `.github/workflows/` | CI: frontend build and audit, backend and engine tests, dependency audit, secret scan | Monssif El Haouari |
 
 ## Run it locally
 
@@ -107,7 +107,7 @@ Every record says where it came from: `user` (entered in the app), `simulated`/`
 
 The metadata files are in `download/OSD-575_metadata_OSD-575-ISA/`.
 
-**Not yet checked (for B):** the OSDR web page itself, the data licence and terms of use, and whether these files exactly match the official download.
+**Not yet checked (for Ayman El Kerboubi):** the OSDR web page itself, the data licence and terms of use, and whether these files exactly match the official download.
 
 **Open question for the team:** the Inspiration4 crew is publicly known, so coded IDs plus recorded sex may not keep individuals anonymous. The team should decide before this data appears in a public demo.
 
@@ -121,7 +121,7 @@ The scope is kept small enough for a hackathon. Each protection has been tested 
 
 | Protection | What it does | Status |
 |---|---|---|
-| Input validation | Mode 1 check-ins are validated with A's contract at the API. Malformed values, unknown units, unknown crew IDs and non-JSON bodies are refused with HTTP 422 and a message. | Built and tested locally |
+| Input validation | Mode 1 check-ins are validated with Iliass Barrou's contract at the API. Malformed values, unknown units, unknown crew IDs and non-JSON bodies are refused with HTTP 422 and a message. | Built and tested locally |
 | Plausibility checks | Physically impossible values become a "data problem, re-measure" result instead of a finding | Planned |
 | Offline operation | Both datasets load from local files at startup. Tests block network access during loading and assessment. | Built and tested locally |
 | Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint | Built and tested locally. No check-ins are stored in it yet, and the response shape is provisional |
@@ -158,16 +158,16 @@ In short:
 
 ## AI usage disclosure
 
-We use AI coding assistants: Codex for members A, B and C, and Claude Code for member D. Every agent session is logged in [docs/AI_USAGE.md](docs/AI_USAGE.md) with the tool, task, files and human reviewer.
+We use AI coding assistants: Codex for Iliass Barrou, Ayman El Kerboubi and Taha Errassif, and Claude Code for Monssif El Haouari. Every agent session is logged in [docs/AI_USAGE.md](docs/AI_USAGE.md) with the tool, task, files and human reviewer.
 
 ## Team
 
-| Member | Role |
-|---|---|
-| A | Tech lead, analytics engine |
-| B | Data, health science and evaluation; main presenter |
-| C | Frontend and UX; demo driver |
-| D | Backend, security, data integrity and release |
+| Member | Name | Role |
+|---|---|---|
+| A | Iliass Barrou | Tech lead, analytics engine |
+| B | Ayman El Kerboubi | Data, health science and evaluation; main presenter |
+| C | Taha Errassif | Frontend and UX; demo driver |
+| D | Monssif El Haouari | Backend, security, data integrity and release |
 
 ## Acknowledgements and licences
 

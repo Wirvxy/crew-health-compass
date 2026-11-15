@@ -2,6 +2,8 @@
 
 The event requires a description of how AI tools were used. Every agent session gets an entry here with at least the date, member, tool, task, files changed and human review status. Add new entries at the bottom and keep earlier entries unchanged.
 
+Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = Monssif El Haouari. The entries below use these letters.
+
 ## 2026-11-14 · Member D · Claude Code · Initial frontend CI
 
 - **Task:** Add the first GitHub Actions workflow. It runs on pull requests into `main` and on pushes to `main`, with read-only repository permissions. It installs the locked frontend dependencies, type-checks and builds the frontend, and audits dependencies.

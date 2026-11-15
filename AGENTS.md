@@ -12,12 +12,12 @@ Items marked ***Proposal*** were suggested by D and the team has not agreed to t
 - Before your first edit, state three things: which member you work for, their role, and which files this task lets you change. If you cannot tell, ask. Do not guess.
 - The notes in section 7 apply only when you work for that member.
 
-| Member | Role | Owns | Usual agent |
-|---|---|---|---|
-| A | Tech lead, analytics engine | `engine/` | Codex |
-| B | Data, health science, evaluation | `iss-synthetic-3000/` | Codex |
-| C | Frontend and UX | `frontend/` | Codex |
-| D | Backend, security, data integrity, release | `api/`, `.github/` (CI), deployment | Claude Code |
+| Member | Name | Role | Owns | Usual agent |
+|---|---|---|---|---|
+| A | Iliass Barrou | Tech lead, analytics engine | `engine/` | Codex |
+| B | Ayman El Kerboubi | Data, health science, evaluation | `iss-synthetic-3000/` | Codex |
+| C | Taha Errassif | Frontend and UX | `frontend/` | Codex |
+| D | Monssif El Haouari | Backend, security, data integrity, release | `api/`, `.github/` (CI), deployment | Claude Code |
 
 The roadmap also planned `contracts/` (A), `catalogue/`, `data/` and `eval/` (B), and `security/` (D). They do not exist yet; their owners create them when needed.
 
@@ -106,22 +106,22 @@ A owns the engine contracts and D owns the API. Change them only through a PR la
 
 ## 7. Role notes (apply only when you work for that member)
 
-### A: tech lead, analytics
+### A: Iliass Barrou, tech lead and analytics
 
 - Hand off each engine function with a guide and JSON examples, as for Mode 1 and A1–A4 (see section 4).
 - A approves contract changes and announces integration windows.
 
-### B: data, health science, evaluation
+### B: Ayman El Kerboubi, data, health science and evaluation
 
 - Hand off cited YAML rules, test datasets, scenarios and the evaluation report.
 - B decides whether the project uses real data or simulation.
 
-### C: frontend, UX
+### C: Taha Errassif, frontend and UX
 
 - Build screens against the fixtures first, then the API-integrated demo and the backup video.
 - Show the SIMULATED banner whenever demo data is on screen.
 
-### D: backend, security, release
+### D: Monssif El Haouari, backend, security and release
 
 - Hand off working endpoints, persistence, CI, local and public deployment, and the submission.
 - D is a cybersecurity student who is new to backends, deployment and cryptography. Use plain English and define each technical term the first time it appears. Explain both *what* to do and *why*. Work in small steps that D can check, and confirm D understands before moving on.
