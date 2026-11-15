@@ -51,8 +51,8 @@ ASSETS BUNDLED WITH THE FRONTEND
   https://sketchfab.com/3d-models/astronaut-287589e324b942b8be57dbd6c539b2ab
 
 - Crew Health Compass logo (frontend/src/assets/brand/crew-health-compass-logo.png),
-  made for the team with OpenAI's ChatGPT image generation. The file is
-  unchanged and keeps its embedded C2PA content credentials, which record this.
+  made for the team with an AI image generator. The file is unchanged and keeps
+  its embedded C2PA content credentials, which record this.
 
 - Crew profile photos (frontend/src/assets/profiles/*.jpg): four helmeted
   astronaut images supplied by Monssif El Haouari, unchanged. SOURCE AND
@@ -71,5 +71,6 @@ SOFTWARE DEPENDENCIES (installed by npm and pip; not stored in this repository)
 
 AI ASSISTANCE
 
-The team used AI coding assistants (Codex and Claude Code) and, for the logo,
-ChatGPT image generation. Every session is logged in docs/AI_USAGE.md.
+The team used AI tools to help with parts of the code, the documentation and
+some graphics, including the logo. The team decided what to build and is
+responsible for the result.

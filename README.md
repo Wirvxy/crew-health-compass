@@ -95,7 +95,6 @@ cd frontend; npm run build; cd ..
 | [data/mode1/README.md](data/mode1/README.md) | How the synthetic dataset was built |
 | [data/mode2/README.md](data/mode2/README.md) | What the NASA files are and which ones the engine reads |
 | [data/radiation/README.md](data/radiation/README.md) | The Curiosity radiation CSV: source, columns and SHA-256 |
-| [docs/AI_USAGE.md](docs/AI_USAGE.md) | Log of every AI-assisted change |
 
 ## Data and provenance
 
@@ -169,7 +168,7 @@ In short:
 
 ## AI usage disclosure
 
-We use AI coding assistants: Codex for Iliass Barrou, Ayman El Kerboubi and Taha Errassif, and Claude Code for Monssif El Haouari. Every agent session is logged in [docs/AI_USAGE.md](docs/AI_USAGE.md) with the tool, task, files and human reviewer.
+The team used AI tools to help with parts of the code, the documentation and some graphics, including the logo. The team decided what to build and is responsible for the result.
 
 ## Team
 

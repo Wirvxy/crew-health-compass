@@ -12,12 +12,12 @@ Items marked ***Proposal*** were suggested by D and the team has not agreed to t
 - Before your first edit, state three things: which member you work for, their role, and which files this task lets you change. If you cannot tell, ask. Do not guess.
 - The notes in section 7 apply only when you work for that member.
 
-| Member | Name | Role | Owns | Usual agent |
-|---|---|---|---|---|
-| A | Iliass Barrou | Tech lead, analytics engine | `engine/` | Codex |
-| B | Ayman El Kerboubi | Data, health science, evaluation | `data/` | Codex |
-| C | Taha Errassif | Frontend and UX | `frontend/` | Codex |
-| D | Monssif El Haouari | Backend, security, data integrity, release | `api/`, `.github/` (CI), deployment | Claude Code |
+| Member | Name | Role | Owns |
+|---|---|---|---|
+| A | Iliass Barrou | Tech lead, analytics engine | `engine/` |
+| B | Ayman El Kerboubi | Data, health science, evaluation | `data/` |
+| C | Taha Errassif | Frontend and UX | `frontend/` |
+| D | Monssif El Haouari | Backend, security, data integrity, release | `api/`, `.github/` (CI), deployment |
 
 The roadmap also planned `contracts/` (A), `catalogue/` and `eval/` (B), and `security/` (D). They do not exist yet; their owners create them when needed.
 
@@ -25,10 +25,7 @@ The roadmap also planned `contracts/` (A), `catalogue/` and `eval/` (B), and `se
 
 - `docs/` and the root docs (`README.md`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`) belong to D.
 
-**Edit only the files your role and task allow.** There are two exceptions:
-
-- Anyone may add their own line to `docs/AI_USAGE.md`.
-- During an integration window that A announces, you may edit the files A names.
+**Edit only the files your role and task allow.** One exception: during an integration window that A announces, you may edit the files A names.
 
 If a task needs a change in another member's files, do not make it. Write down the change for that owner instead.
 
@@ -62,7 +59,6 @@ Every task prompt should state: the goal, the allowed files, the files to read f
    - Frontend, from `frontend/`: `npm run build`
 
    ruff and ESLint are not configured yet.
-3. Add one line to `docs/AI_USAGE.md` with the tool, task, files and human reviewer.
 
 ## 4. Shared interfaces
 
