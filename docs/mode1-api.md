@@ -55,8 +55,15 @@ The passport uses the crew-path form to match the four existing crew endpoints.
 | `indicators.mood` | no | `low`, `fair`, `good` or `great` |
 | `data_origin` | no | must be `user` if sent |
 
-- **Values:** send them as strings to keep exact digits. JSON numbers are also accepted, and their digits are kept.
-- **Units:** must match exactly. The validator sets no medical limits; it only rejects negative or non-numeric values.
+- **Values:** send them as strings to keep exact digits. JSON numbers are also accepted, and their digits are kept. Either way, write plain decimal numbers (see the checks below).
+- **Units:** must match exactly.
+- **Content type:** send the header `Content-Type: application/json`; any other type gets 415. Another website can make a visitor's browser send a `text/plain` or form POST without asking the server first. A JSON POST from another site needs the server's permission first (a CORS preflight), which this API never gives.
+- **Checks:** A's validator rejects missing fields, unknown units, and negative or non-numeric values. The API then rejects, with 422, readings that cannot be real by definition (`api/app/checkin_checks.py`):
+  - a value that is not a plain decimal number with up to 4 digits before the decimal point and 3 after: no sign, exponent (`1e3`) or spaces;
+  - a heart rate, breathing rate or blood pressure of 0;
+  - a systolic pressure that is not above the diastolic pressure;
+  - more than 24 hours of sleep.
+- **No medical limits:** these are format and logic checks only. Physiological ranges need a cited source and are still open, so a value such as 300 bpm is still assessed (as unusual).
 - **Crew IDs:** these are fictional crew roles from the **synthetic** history. They are not the NASA crew C001–C004, so do not map one onto the other.
 
 ### What gets compared
@@ -111,7 +118,8 @@ Errors from the new endpoints have one shape, `{"detail": "<message>"}`. [Real e
 
 | Status | When |
 |---|---|
-| 422 | Invalid check-in. The message starts with `Invalid check-in:` and then gives the validator's reason. |
+| 415 | The check-in was not sent as JSON (`Content-Type: application/json`). |
+| 422 | Invalid check-in. The message starts with `Invalid check-in:` and then gives the reason from A's validator or the API's checks. |
 | 404 | Unknown NASA crew, or a visit that is not postflight. The message lists the valid visits. |
 | 503 | A dataset could not be loaded at startup. The message names no server path. |
 
@@ -123,3 +131,4 @@ Exception: when a required query parameter is missing on a GET endpoint (for exa
 - **For A:** value errors say "Expected a finite decimal value" without naming the field. Unit errors do name it.
 - **For A or D:** the Mode 1 history chart needs the individual earlier readings, which the API does not return yet.
 - **Storage:** check-ins are assessed but not stored, and they are not yet in the audit hash chain.
+- **For B:** plausible physiological ranges (for example the highest heart rate a check-in may report) need a cited source in `catalogue/indicators.yaml`. Until then, only the format and logic checks above apply, and the "data problem" result is not defined.

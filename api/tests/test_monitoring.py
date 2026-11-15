@@ -15,9 +15,10 @@ from fastapi.testclient import TestClient
 
 from app import monitoring
 from app.main import app
-from engine.mode1_contracts import validate_assessment
+from engine.mode1_contracts import CHECK_IN_UNITS, validate_assessment
 
 URL = "/api/monitoring/assess"
+JSON = {"content-type": "application/json"}
 AFTER_HISTORY = "2030-06-30T13:30:00Z"
 
 
@@ -150,6 +151,80 @@ def test_numbers_keep_their_exact_digits(client):
     result = response.json()
     assert evidence(result, "heart_rate")["value"] == "67.0"
     assert evidence(result, "systolic_bp")["value"] == "100.50"
+
+
+@pytest.mark.parametrize("content_type", [
+    None, "text/plain", "application/x-www-form-urlencoded", "multipart/form-data; boundary=x",
+])
+def test_bodies_not_sent_as_json_are_415(client, content_type):
+    # Browsers send these types from other websites without a CORS preflight.
+    headers = {"content-type": content_type} if content_type else {}
+    response = client.post(URL, content=json.dumps(check_in()), headers=headers)
+    assert response.status_code == 415
+    assert "application/json" in response.json()["detail"]
+
+
+def test_json_with_a_charset_is_accepted(client):
+    headers = {"content-type": "Application/JSON; charset=utf-8"}
+    response = client.post(URL, content=json.dumps(check_in()), headers=headers)
+    assert response.status_code == 200, response.text
+
+
+def test_deeply_nested_json_is_422_not_500(client):
+    depth = 100_000
+    response = client.post(URL, content="[" * depth + "]" * depth, headers=JSON)
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Invalid check-in: the JSON is nested too deeply."
+
+
+def with_reading(indicator, value):
+    body = check_in()
+    body["indicators"][indicator] = {"value": value, "unit": CHECK_IN_UNITS[indicator]}
+    return body
+
+
+@pytest.mark.parametrize("indicator, value, reason", [
+    ("heart_rate", "1e3", "plain number"),  # exponent form
+    ("heart_rate", "+72", "plain number"),
+    ("heart_rate", ".5", "plain number"),
+    ("heart_rate", "77777", "plain number"),  # 5 digits before the point
+    ("heart_rate", "72.1234", "plain number"),  # 4 digits after the point
+    ("sleep_duration", "7" * 5000, "plain number"),
+    ("heart_rate", "0", "heart_rate: a measured value must be above 0"),
+    ("respiratory_rate", "0.000", "respiratory_rate: a measured value must be above 0"),
+    ("diastolic_bp", "0", "diastolic_bp: a measured value must be above 0"),
+    ("diastolic_bp", "100", "systolic_bp must be greater than diastolic_bp"),  # equal
+    ("systolic_bp", "50", "systolic_bp must be greater than diastolic_bp"),
+    ("sleep_duration", "24.001", "cannot report more than 24 hours"),
+])
+def test_readings_that_cannot_be_real_are_422(client, indicator, value, reason):
+    response = client.post(URL, json=with_reading(indicator, value))
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail.startswith("Invalid check-in:") and reason in detail
+
+
+def test_json_numbers_in_exponent_form_are_422(client):
+    # The JSON number 1e2 is read as Decimal("1E+2"), which would be shown as "1E+2".
+    text = json.dumps(check_in()).replace('"67"', "1e2")
+    response = client.post(URL, content=text, headers=JSON)
+    assert response.status_code == 422
+    assert "heart_rate: write the value as a plain number" in response.json()["detail"]
+
+
+@pytest.mark.parametrize("indicator, value", [
+    ("sleep_duration", "0"), ("sleep_duration", "24"), ("heart_rate", "72.125"), ("heart_rate", "1000.5"),
+])
+def test_values_at_the_format_and_logic_edges_are_assessed(client, indicator, value):
+    assess_ok(client, with_reading(indicator, value))
+
+
+@pytest.mark.parametrize("value", ["300", "0.001"])
+def test_no_medical_range_is_applied_yet(client, value):
+    # Physiological ranges need a cited source (catalogue/indicators.yaml) and
+    # are still open, so these are compared with personal history, not refused.
+    result = assess_ok(client, with_reading("heart_rate", value))
+    assert result["overall_status"] == "unusual"
 
 
 def test_m3_isolation_forest_is_not_used(client):

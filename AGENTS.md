@@ -80,14 +80,14 @@ A owns the engine contracts and D owns the API. Change them only through a PR la
   - Engine: `load_radiation_history()`, `radiation_timeline()` and `may_20_event_summary()` in `engine/radiation_history.py`. Guide: `engine/RADIATION_HISTORY.md`.
   - API: `GET /api/environment/radiation/timeline` and `GET /api/environment/radiation/events/may-20-2024`. Guide: `docs/radiation-api.md`.
 - **Audit:** `GET /audit/verify` checks the hash chain. Its response shape is provisional.
-- **Errors:** `{"detail": "<message>"}` with 422 for invalid input, 404 for an unknown crew or visit, and 503 when a dataset is not loaded.
+- **Errors:** `{"detail": "<message>"}` with 415 when a check-in is not sent as JSON, 422 for invalid input, 404 for an unknown crew or visit, and 503 when a dataset is not loaded.
 - **`provenance` values:** `user`, `simulated`, `dataset:<name>`. Mode 1 calls the field `data_origin`: `user` for check-ins and `synthetic` for its history.
 - **Demo access control (Planned):** every request carries a fixed demo token for one of two roles, astronaut or flight surgeon. The server uses the token for basic authentication (identifying the caller through the token) and authorization (checking what that caller may access). Always call this "demo access control". It is not production-ready account management. A token that is shared or publicly exposed does not establish a private user identity.
 - **Still open:**
   - how a check-in filled with example values is marked as simulated (the Mode 1 contract accepts only `data_origin: "user"`)
   - storing check-ins, and adding them to the audit hash chain
   - the name of the role-token header, the demo token values, and which astronaut each astronaut token belongs to
-  - plausibility checks and the "data problem" result
+  - physiological ranges for plausibility checks, which need a cited source, and the "data problem" result. The API already rejects readings that are impossible by definition (`api/app/checkin_checks.py`)
 
 ## 5. Branches, reviews and merging
 
