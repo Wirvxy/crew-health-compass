@@ -49,7 +49,7 @@ export default function Dashboard({ profile, section, onShowBody }: { profile: P
   const [current, setCurrent] = useState<{ result: MonitoringResult; example: boolean | null } | null>(null)
   const [history, setHistory] = useState<StoredCheckIn[] | null>(null), [historyError, setHistoryError] = useState(''), [version, setVersion] = useState(0)
   const [pending, setPending] = useState(false), [submitError, setSubmitError] = useState('')
-  const [selected, setSelected] = useState<string | null>(null), [view, setView] = useState<'detailed' | 'simple'>('detailed'), [wall, setWall] = useState(false), [notes, setNotes] = useState(false), [message, setMessage] = useState('')
+  const [selected, setSelected] = useState<string | null>(null), [notes, setNotes] = useState(false), [message, setMessage] = useState('')
   // Aborted when this workspace closes (logout or another profile), so a late answer never reaches the next screen.
   const life = useRef<AbortController | null>(null)
   useEffect(() => { const c = new AbortController(); life.current = c; return () => c.abort() }, [])
@@ -92,12 +92,10 @@ export default function Dashboard({ profile, section, onShowBody }: { profile: P
   if (loadError) return <div className="page"><h2>Unable to reach the Mode 1 backend</h2><p>{loadError}</p><button onClick={() => setRetry(n => n + 1)}>Retry</button></div>
   if (!info) return <div className="page" role="status">Loading your history…</div>
   const label = current ? `${words(current.result.overall_status)}${current.example === null ? '' : current.example ? ' · example values' : ' · user-entered'}` : ''
-  return <div className={`${view === 'simple' ? 'view-simple' : ''} ${wall ? 'wall' : ''}`}>
+  return <div>
     <div className="page"><aside className="prototype-scope" aria-label="Mode 1 scope"><strong>MODE 1 · MISSION HEALTH MONITOR · SIMULATED HISTORY</strong><span>Your check-ins are compared with your own fictional crew history by the local backend. Separate from the real NASA data in Mode 2.</span></aside><div className="page-toolbar">
       <TopBar profile={profile} context={`Synthetic ISS history · ends ${timing.end.slice(0, 10)}`} /><div className="tools">
-      <select id="view-density" aria-label="Display density" value={view} onChange={e => setView(e.target.value === 'simple' ? 'simple' : 'detailed')}><option value="detailed">Detailed view</option><option value="simple">Simple view</option></select>
-      <button id="export" className="detailed-only" disabled={!current} onClick={() => { if (!current) return; downloadMonitoringReport(current.result, current.example); setMessage('PDF downloaded locally. No data transmitted.') }}>↓ Export PDF</button>
-      <button id="wall" className="quiet" aria-pressed={wall} title="Large-screen mission wall" onClick={() => setWall(w => !w)}>⛶ <span className="sr-only">Mission wall</span></button>
+      <button id="export" disabled={!current} onClick={() => { if (!current) return; downloadMonitoringReport(current.result, current.example); setMessage('PDF downloaded locally. No data transmitted.') }}>↓ Export PDF</button>
     </div></div><div className="link-info"><span>{current ? `Your latest result: ${label}` : 'No check-in saved for your profile yet'}</span><span id="latency">LOCAL SESSION · No ground connection · No live telemetry</span></div>
     <div className="zones-checkin" hidden={section !== 'checkin'}><DailyCheckIn draft={form} submitted={submitted} historyEnd={timing.end || null} pending={pending} error={submitError} result={current?.result ?? null} onChange={updateDraft} onExample={example} onSubmit={submit} onShowBody={onShowBody} />
       <div className="checkin-side"><PlanForToday crew={crew} version={version} onShowBody={onShowBody} /><RecentCheckIns items={history} error={historyError} /></div></div>
