@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import Brand from './Brand'
+import ProfilePhoto, { hasProfilePhoto } from './ProfilePhoto'
 import { profileCode } from '../services/session'
 import type { Profile } from '../services/session'
 
@@ -33,7 +34,7 @@ export default function Sidebar({ page, profile, onPage, onSignOut }: { page: Pa
     <Brand label="go to Daily check-in" onHome={() => onPage(HOME_PAGE)} />
     <ul className="sidebar-links">{PAGES.map(p => <li key={p.id}><button data-page={p.id} aria-current={p.id === page ? 'page' : undefined} onClick={() => onPage(p.id)}><span className="nav-icon"><PageIcon page={p.id}/></span><span className="nav-text"><strong>{p.label}</strong></span></button></li>)}</ul>
     <div className="sidebar-profile">
-      <span className="profile-chip" aria-hidden="true">{profileCode(profile.astronaut_id)}</span>
+      <span className="profile-chip" aria-hidden="true">{hasProfilePhoto(profile.astronaut_id) ? <ProfilePhoto id={profile.astronaut_id} className="chip-photo" /> : profileCode(profile.astronaut_id)}</span>
       <span className="profile-who"><small>Signed in as</small><strong id="signed-in-name">{profile.name}</strong></span>
       <button type="button" id="logout" className="logout" onClick={onSignOut}>Log out</button>
     </div>

@@ -54,6 +54,12 @@ ASSETS BUNDLED WITH THE FRONTEND
   made for the team with OpenAI's ChatGPT image generation. The file is
   unchanged and keeps its embedded C2PA content credentials, which record this.
 
+- Crew profile photos (frontend/src/assets/profiles/*.jpg): four helmeted
+  astronaut images supplied by Monssif El Haouari, unchanged. SOURCE AND
+  LICENCE NOT YET DOCUMENTED: the files carry no author or licence data, and
+  their size suggests they were saved from Pinterest. They must be cleared or
+  replaced before the public submission.
+
 SOFTWARE DEPENDENCIES (installed by npm and pip; not stored in this repository)
 
 - Frontend: React and React DOM (MIT), three.js (MIT), Vite and

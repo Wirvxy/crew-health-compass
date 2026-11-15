@@ -618,3 +618,14 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
   - D watched the login → check-in → logout → second profile flow in the built-in browser.
 - **Noticed, not changed:** Flight Engineer 1's synthetic rest history has zero spread (MAD 0) for heart rate and diastolic pressure, so its rest check-ins come back "Not assessed". This is engine and data behaviour, for A and B.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Crew profile photos
+
+- **Change:** D's four crew photos (`img.zip`) appear on the start page's profile cards, the sidebar "Signed in as" chip and the top bar.
+  - The files are copied unchanged into `frontend/src/assets/profiles/`, named by profile ID; `commender.jpg` became `commander.jpg`.
+  - `ProfilePhoto` crops each one so the helmet stays in view. A profile without a photo keeps the drawn helmet icon.
+- **Source:** the ZIP was opened safely (4 images, no unsafe paths); the images are byte-identical to the crew photos in the earlier login ZIP.
+  - They carry no author or licence metadata, and their widths (735–736 px) suggest Pinterest downloads.
+  - D chose to add them now, marked unverified. `NOTICE` says they must be cleared or replaced before the public submission.
+- **Checks:** `npm run build` passes; shown to D in the built-in browser on the start page, desktop and phone.
+- **Human review:** None yet.
