@@ -176,4 +176,8 @@ We use AI coding assistants: Codex for members A, B and C, and Claude Code for m
 - The synthetic dataset's historical reference tables are cited in [iss-synthetic-3000/README.md](iss-synthetic-3000/README.md).
 - 3D model: "Astronaut" by Javi_DaviYT on Sketchfab, CC BY 4.0 ([notice](frontend/public/licenses/Astronaut-model-NOTICE.txt)).
 - Font: Inter, SIL Open Font License 1.1 ([licence](frontend/public/licenses/Inter-OFL.txt)).
-- The repository itself has no licence file yet; the team still has to choose one.
+
+**Licence:**
+- The team's own code, documentation and synthetic data are under the [Apache License 2.0](LICENSE).
+- The [2026 Space Apps Participant Terms](https://www.spaceappschallenge.org/legal/) require original content to be under an OSI open-source licence, and Apache 2.0 is what NASA uses when a team names none.
+- Every third-party source and its licence is listed in [NOTICE](NOTICE). The terms require this documentation and citations.
