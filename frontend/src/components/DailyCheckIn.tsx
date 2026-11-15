@@ -5,6 +5,8 @@ import type { MonitoringResult } from '../services/monitoring'
 import type { CheckIn, CrewDraft, DailyDraft, DailyField } from '../types/assessment'
 export const emptyDraft = (timestamp = ''): CrewDraft => ({ values: { context: '', timestamp, heart: '', respiratory: '', systolic: '', diastolic: '', sleep: '', mood: '' }, simulated: false })
 export type ExampleKind = 'typical' | 'high' | 'early'
+/** Plain decimal: no sign, exponent ("1e3") or spaces; up to 4 digits before the point and 3 after. */
+const PLAIN_NUMBER = /^\d{1,4}(\.\d{1,3})?$/
 const CONTEXT_HELP: Record<string, string> = {
   rest: 'compares heart rate and blood pressure with rest history', exercise: 'compares heart rate and blood pressure with exercise history',
   recovery: 'compares heart rate and blood pressure with post-exercise history', morning_check: 'compares heart rate with morning history',
@@ -19,13 +21,17 @@ export default function DailyCheckIn({ crew, crews, draft, submissions, historyE
   const [errors, setErrors] = useState<Partial<Record<DailyField, string>>>({}), form = useRef<HTMLFormElement>(null)
   function change(field: DailyField, value: string) { setErrors(e => ({ ...e, [field]: undefined })); onChange({ ...draft, values: { ...draft.values, [field]: value } }) }
   function submit(e: React.FormEvent) {
-    // Input checks only: the backend validates the contract and makes every assessment.
+    // Input checks only, the same format and logic rules as the API (api/app/checkin_checks.py).
+    // They are not medical limits; the backend validates the contract and makes every assessment.
     e.preventDefault(); const v = draft.values, next: typeof errors = {}
     if (!v.context) next.context = 'Choose how the values were measured.'
     if (!v.timestamp) next.timestamp = 'Enter the mission date and time (UTC).'
-    for (const f of ['heart', 'respiratory', 'systolic', 'diastolic'] as const) if (!v[f] || !Number.isFinite(+v[f]) || +v[f] <= 0) next[f] = 'Enter a positive numeric value.'
+    for (const f of ['heart', 'respiratory', 'systolic', 'diastolic'] as const) {
+      if (!PLAIN_NUMBER.test(v[f].trim())) next[f] = 'Enter a plain number, like 72 or 72.5 (up to 4 digits, 3 decimals).'
+      else if (+v[f] <= 0) next[f] = 'Enter a value above 0.'
+    }
     if (!next.systolic && !next.diastolic && +v.systolic <= +v.diastolic) next.systolic = 'Systolic must be greater than diastolic.'
-    if (v.sleep !== '' && (!Number.isFinite(+v.sleep) || +v.sleep < 0 || +v.sleep > 24)) next.sleep = 'Enter hours from 0 to 24, or leave empty.'
+    if (v.sleep.trim() !== '' && (!PLAIN_NUMBER.test(v.sleep.trim()) || +v.sleep > 24)) next.sleep = 'Enter hours from 0 to 24 as a plain number, or leave empty.'
     setErrors(next)
     const first = Object.keys(next)[0]; if (first) { form.current?.querySelector<HTMLInputElement>(`#${first}`)?.focus(); return }
     onSubmit(v)

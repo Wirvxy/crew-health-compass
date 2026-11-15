@@ -9,6 +9,7 @@ This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite
 | `app/audit.py` | Hash-chained `records` table: append and verify |
 | `app/osd575.py` | Read-only `/datasets/osd575/...` endpoints built on A's `engine/`: astronauts, panels, measurements, postflight, trajectory, comparison and the A4 passport (see [docs/osd575-api.md](../docs/osd575-api.md)) |
 | `app/monitoring.py` | Mode 1: `GET /api/monitoring/astronauts` and `POST /api/monitoring/assess`, built on A's M2 statistical detection and B's synthetic history (see [docs/mode1-api.md](../docs/mode1-api.md)) |
+| `app/checkin_checks.py` | Format and logic checks that the API adds to a Mode 1 check-in. They are not medical limits |
 | `app/radiation.py` | Mission Environment: `GET /api/environment/radiation/timeline` and `GET /api/environment/radiation/events/may-20-2024`, built on A's R1 radiation history engine (see [docs/radiation-api.md](../docs/radiation-api.md)) |
 | `tests/` | pytest tests. Database tests use temporary databases; OSD-575 tests read `data/mode2/` |
 | `requirements.txt` | Runtime dependencies, pinned |
@@ -37,7 +38,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Expected result: `126 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
+Expected result: `152 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
 
 A's engine has its own `unittest` suite (78 tests; 5 are skipped unless the optional scikit-learn for the disabled M3 experiment is installed). Run it from the repository root:
 

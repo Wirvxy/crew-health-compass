@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { utcLabel, withSeparators } from '../services/radiation'
 import type { RadiationPoint } from '../services/radiation'
 
 // Drawing only: every value comes from the API; nothing is interpolated or computed for display.
-const W = 960, H = 360, LEFT = 72, RIGHT = 20, TOP = 26, BOTTOM = 44
+// The drawing width follows the chart's real width (320–960 px), so its 11 px labels stay readable on a phone.
+const MAX_W = 960, MIN_W = 320, LEFT = 72, RIGHT = 20, TOP = 26, BOTTOM = 44
+const EVENT_LABEL_SPACE = 170 // room the "… solar event ▸" label needs to the left of the event band
 const HOUR = 3_600_000, DAY = 24 * HOUR
 const GAP_MS = 3 * HOUR // break the line where readings are more than 3 h apart (they are usually 17 min apart)
 const MIN_ZOOM_MS = 30 * 60_000
@@ -15,24 +17,36 @@ function linearTicks(max: number) {
   const raw = max / 5, base = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 5, 10].map(m => m * base).find(s => s >= raw) ?? raw
   return Array.from({ length: Math.floor(max / step) + 1 }, (_, i) => i * step)
 }
-function timeTicks(x0: number, x1: number) {
-  const step = [HOUR, 3 * HOUR, 6 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY, 14 * DAY].find(s => (x1 - x0) / s <= 8) ?? 28 * DAY
+function timeTicks(x0: number, x1: number, maxTicks: number) {
+  const step = [HOUR, 3 * HOUR, 6 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY, 14 * DAY].find(s => (x1 - x0) / s <= maxTicks) ?? 28 * DAY
   const out: number[] = []
   for (let t = Math.ceil(x0 / step) * step; t <= x1; t += step) out.push(t)
   return { step, out }
 }
-const dateLabel = (t: number, step: number) => {
-  const d = new Date(t), day = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', timeZone: 'UTC' })
-  return step >= DAY ? day : `${day} ${d.toISOString().slice(11, 16)}`
+/** UTC tick label. Compact (narrow charts): hourly ticks show only the time, and the date at midnight. */
+const dateLabel = (t: number, step: number, compact: boolean) => {
+  const d = new Date(t), day = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', timeZone: 'UTC' }), time = d.toISOString().slice(11, 16)
+  if (step >= DAY) return day
+  return compact ? (time === '00:00' ? day : time) : `${day} ${time}`
 }
 
 export default function RadiationChart({ points, unit, detector, eventDate, peak, logScale }: Props) {
-  const svg = useRef<SVGSVGElement>(null)
+  const svg = useRef<SVGSVGElement>(null), wrap = useRef<HTMLDivElement>(null)
   const all = useMemo<Pt[]>(() => points.map(p => ({ p, t: Date.parse(p.timestamp_utc), v: p.value == null ? null : Number(p.value) })), [points])
   const [view, setView] = useState<[number, number] | null>(null)
   const [hover, setHover] = useState<Pt | null>(null)
   const [drag, setDrag] = useState<{ from: number; to: number } | null>(null)
-  if (!all.length) return <p className="nasa-muted">No readings in this date range.</p>
+  const [W, setW] = useState(MAX_W), hasData = all.length > 0
+  useEffect(() => {
+    const el = wrap.current
+    if (!el) return
+    const fit = () => { if (el.clientWidth) setW(Math.min(MAX_W, Math.max(MIN_W, Math.round(el.clientWidth)))) } // 0 while the tab is hidden
+    fit()
+    const observer = new ResizeObserver(fit); observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasData])
+  if (!hasData) return <p className="nasa-muted">No readings in this date range.</p>
+  const H = W < 600 ? 280 : 360
 
   const full: [number, number] = [all[0].t, all[all.length - 1].t]
   const [x0, x1] = view ?? (full[0] === full[1] ? [full[0] - HOUR, full[1] + HOUR] : full)
@@ -54,9 +68,12 @@ export default function RadiationChart({ points, unit, detector, eventDate, peak
     prev = q
   }
   const yTicks = logScale ? [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].filter(v => Math.log10(v) >= y0 && Math.log10(v) <= y1) : linearTicks(y1)
-  const { step, out: xTicks } = timeTicks(x0, x1)
+  const compact = W < 600
+  const { step, out: xTicks } = timeTicks(x0, x1, Math.max(2, Math.min(8, Math.floor((W - LEFT - RIGHT) / (compact ? 50 : 90)))))
   const eventStart = eventDate ? Date.parse(`${eventDate}T00:00:00Z`) : null
   const band = eventStart === null ? null : [Math.max(eventStart, x0), Math.min(eventStart + DAY, x1)] as const
+  // The label sits left of the band, pointing at it; with no room there (May 20 only, or zoomed in), it goes inside.
+  const labelInside = band !== null && px(band[0]) - LEFT < EVENT_LABEL_SPACE
   const peakT = peak ? Date.parse(peak.timestamp_utc) : null, peakV = peak?.value == null ? null : Number(peak.value)
   const dataEnd = full[1]
 
@@ -66,11 +83,11 @@ export default function RadiationChart({ points, unit, detector, eventDate, peak
     while (lo < hi) { const mid = (lo + hi) >> 1; if (visible[mid].t < t) lo = mid + 1; else hi = mid }
     return lo > 0 && t - visible[lo - 1].t < visible[lo].t - t ? visible[lo - 1] : visible[lo]
   }
-  return <div className="rad-chart">
+  return <div className="rad-chart" ref={wrap}>
     <svg ref={svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Detector ${detector} absorbed dose rate in ${unit}, ${visible.length} readings from ${utcLabel(new Date(x0).toISOString())} to ${utcLabel(new Date(x1).toISOString())}. Line breaks mark periods without readings.`}>
       <defs><clipPath id={`rad-plot-${detector}`}><rect x={LEFT} y={TOP} width={W - LEFT - RIGHT} height={H - TOP - BOTTOM} /></clipPath></defs>
       {yTicks.map(v => <g key={v} className="rad-grid"><line x1={LEFT} x2={W - RIGHT} y1={py(v)} y2={py(v)} /><text x={LEFT - 8} y={py(v) + 4} textAnchor="end">{v.toLocaleString('en-US')}</text></g>)}
-      {xTicks.map(t => <text key={t} className="rad-axis" x={px(t)} y={H - BOTTOM + 18} textAnchor="middle">{dateLabel(t, step)}</text>)}
+      {xTicks.map(t => <text key={t} className="rad-axis" x={px(t)} y={H - BOTTOM + 18} textAnchor="middle">{dateLabel(t, step, compact)}</text>)}
       <text className="rad-axis" x={14} y={TOP + (H - TOP - BOTTOM) / 2} transform={`rotate(-90 14 ${TOP + (H - TOP - BOTTOM) / 2})`} textAnchor="middle">{unit} (dose rate)</text>
       <g clipPath={`url(#rad-plot-${detector})`}>
         {gaps.map(([a, b]) => <rect key={a} className="rad-gap" x={px(a)} y={TOP} width={Math.max(px(b) - px(a), 1)} height={H - TOP - BOTTOM}><title>No readings from {utcLabel(new Date(a).toISOString())} to {utcLabel(new Date(b).toISOString())}</title></rect>)}
@@ -80,7 +97,9 @@ export default function RadiationChart({ points, unit, detector, eventDate, peak
         {hover && hover.v !== null && <circle className="rad-hover" cx={px(hover.t)} cy={py(hover.v)} r={4} />}
         {drag && <rect className="rad-select" x={Math.min(drag.from, drag.to)} y={TOP} width={Math.abs(drag.to - drag.from)} height={H - TOP - BOTTOM} />}
       </g>
-      {band && band[1] > band[0] && <text className="rad-event-label" x={px(band[0]) - 6} y={TOP + 14} textAnchor="end">{eventDate} solar event ▸</text>}
+      {band && band[1] > band[0] && (labelInside
+        ? <text className="rad-event-label" x={px(band[0]) + 6} y={TOP + 14} textAnchor="start">{eventDate} solar event</text>
+        : <text className="rad-event-label" x={px(band[0]) - 6} y={TOP + 14} textAnchor="end">{eventDate} solar event ▸</text>)}
       {dataEnd <= x1 && dataEnd >= x0 && <g className="rad-end"><line x1={px(dataEnd)} x2={px(dataEnd)} y1={TOP} y2={H - BOTTOM} /><text x={px(dataEnd) - 6} y={H - BOTTOM - 8} textAnchor="end">export ends {utcLabel(new Date(dataEnd).toISOString())}</text></g>}
       <rect className="rad-overlay" x={LEFT} y={TOP} width={W - LEFT - RIGHT} height={H - TOP - BOTTOM}
         onPointerDown={e => { if (e.button !== 0) return; e.currentTarget.setPointerCapture(e.pointerId); const x = svgX(e); setDrag({ from: x, to: x }); setHover(null) }}

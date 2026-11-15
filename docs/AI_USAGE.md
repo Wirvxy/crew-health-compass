@@ -516,3 +516,27 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
   - 30 Mode 1 and Mode 2 responses were byte-identical to an API still running the old folder layout.
   - All four tabs worked in the browser against it, with no console errors.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Playwright bug hunt, fixes and check-in checks
+
+- **Testing:** Playwright 1.64.1 (Apache-2.0, 0 known vulnerabilities) was installed outside the repository and drove Microsoft Edge against a local copy of the app with outbound networking disabled. It covered 50 browser scenarios, 70 malformed API requests, every Mode 2 biomarker (3,926 responses and 16 passports) and 4 time zones. No dependency was added to the project.
+- **Bugs fixed:**
+  - `api/app/monitoring.py`: JSON nested about 20,000 levels deep raised an uncaught `RecursionError` (500 and a long traceback in the log). It now returns 422.
+  - `frontend/src/components/RadiationChart.tsx`:
+    - On a phone the chart's labels shrank to about 4 px. The drawing now follows the chart's real width (320–960 px), so labels keep their 11 px size, and narrow charts show fewer, shorter time labels.
+    - When the visible range started on 20 May, the "solar event" label was drawn off the chart's left edge. It now moves inside the event band.
+  - `frontend/src/components/DailyCheckIn.tsx`: number boxes accepted `1e3`, which the evidence panel showed as "1E+3 bpm". The form now accepts plain decimals only.
+  - `frontend/public/favicon.svg` and `index.html`: the missing icon caused a 404 on every page load. The icon reuses the sidebar's compass logo.
+- **Check-in checks (D's choice: logic checks only):**
+  - New `api/app/checkin_checks.py`. After A's validator, the API rejects readings that cannot be real by definition: numbers that are not plain decimals (up to 4 digits before the point and 3 after), a rate or pressure of 0, systolic not above diastolic, and more than 24 h of sleep. The form applies the same rules.
+  - These are not medical limits. Physiological ranges still need a cited source from B, so 300 bpm is still assessed (a test records this).
+- **Security note:** `POST /api/monitoring/assess` now requires `Content-Type: application/json` (otherwise 415). Another website can send a `text/plain` or form POST through a visitor's browser without a CORS preflight; a JSON POST cannot. This matters once check-ins are stored.
+- **Docs:** `docs/mode1-api.md` (checks, 415), `docs/examples/mode1/errors.json` (real 415 and 422 responses), `api/README.md` and `AGENTS.md`/`CLAUDE.md` (errors, still-open items).
+- **Approval:** D asked for the fixes, chose logic checks only, and confirmed that Iliass Barrou (A) approved this contract change.
+- **Checks:**
+  - pytest: 152 passed (126 before, plus 26 new). On Linux with Python 3.14, 100,000 nested brackets parse without overflowing, so one test forces the overflow to check the 422 message on every platform. Engine: 78 tests OK, 5 skipped.
+  - `npm run build` passes.
+  - Re-run of the Playwright suite: 50/50, no favicon 404.
+  - API re-test: 415 for `text/plain`, 422 for every impossible reading and for deep JSON, and no 500 in the log.
+- **Not changed:** timestamps far outside the mission calendar (for example the year 9999) are still accepted; that would also need a team rule.
+- **Human review:** None yet.
