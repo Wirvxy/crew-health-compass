@@ -3,10 +3,10 @@ import Dashboard from './pages/Dashboard'
 import NasaDataset from './pages/NasaDataset'
 import RadiationHistory from './pages/RadiationHistory'
 import PageHeader from './components/PageHeader'
-import Sidebar from './components/Sidebar'
+import Sidebar, { HOME_PAGE } from './components/Sidebar'
 import type { Page } from './components/Sidebar'
 export default function App() {
-  const [page, setPage] = useState<Page>('nasa')
+  const [page, setPage] = useState<Page>(HOME_PAGE) // Daily check-in: first in the sidebar, and where the logo links
   function go(next: Page) { setPage(next); window.scrollTo({ top: 0 }) }
   // Every workspace stays mounted (only hidden), so check-in drafts, the 3D model and loaded data survive page changes.
   return <div className="app-shell" data-page={page}><a href="#page-content" className="sr-only skip-link">Skip to page content</a><Sidebar page={page} onPage={go}/>

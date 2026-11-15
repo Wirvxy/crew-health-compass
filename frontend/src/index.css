@@ -73,7 +73,11 @@ body::after{content:'';position:fixed;width:110vw;height:80vh;left:4vw;top:70vh;
 [hidden]{display:none!important}
 .app-shell{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
 .sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:30px;padding:26px 16px;background:radial-gradient(ellipse at 15% 0,rgba(var(--accent-rgb),.16),transparent 55%),rgba(13,30,41,.26);border-right:1px solid rgba(224,239,247,.18);backdrop-filter:blur(26px)}
-.sidebar .brand{min-width:0;padding:0 6px}
+/* Logo: the PNG keeps wide transparent margins (visible area x 146-2030, y 186-530 of 2172 x 724), so this frame shows only that area at full sidebar width. */
+.brand-link{display:block;padding:2px 2px 0;border-radius:10px}
+.brand-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.brand-logo-frame{position:relative;display:block;width:100%;aspect-ratio:1884/344;overflow:hidden}
+.brand-logo-frame img{position:absolute;max-width:none;width:115.287%;height:auto;left:-7.749%;top:-54.07%}
 .sidebar-links{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .sidebar-links button{position:relative;width:100%;display:flex;align-items:center;gap:12px;text-align:left;border-radius:18px;border-color:rgba(208,226,236,.28);background:rgba(219,235,244,.07);padding:10px 14px 10px 10px;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s}
 .sidebar-links button:hover{background:rgba(233,243,248,.14);border-color:rgba(var(--accent-rgb),.7);transform:translateX(3px)}
@@ -84,7 +88,6 @@ body::after{content:'';position:fixed;width:110vw;height:80vh;left:4vw;top:70vh;
 .sidebar-links [aria-current=page] .nav-icon{background:var(--accent);border-color:var(--accent);color:#13303d;box-shadow:0 0 18px rgba(var(--accent-rgb),.45)}
 .nav-text{display:flex;flex-direction:column;gap:4px;min-width:0}
 .sidebar-links strong{font-size:12px;font-weight:500}
-.sidebar-links small{font-size:9px;letter-spacing:.4px;color:var(--secondary)}
 .sidebar-note{margin:auto 6px 0;font-size:9px;line-height:1.7;color:var(--secondary)}
 .app-main{min-width:0;padding:35px 38px 0}
 .app-main:focus{outline:none}
@@ -92,12 +95,45 @@ body::after{content:'';position:fixed;width:110vw;height:80vh;left:4vw;top:70vh;
 .app-header{max-width:1880px;margin:0 auto 26px}
 .page-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
 .crew-bar{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-.zones-checkin{max-width:760px}
+/* Daily check-in: the form, with "Plan for today" on its right; stacked (plan below) on narrower screens. */
+.zones-checkin{max-width:1140px;display:grid;grid-template-columns:minmax(0,760px) minmax(270px,360px);gap:20px;align-items:start}
+@media(max-width:1150px){.zones-checkin{grid-template-columns:minmax(0,760px)}}
+.plan-panel{--text:#1a3442;--secondary:#425e6f;--teal:#244c5d;padding:22px;background:linear-gradient(160deg,rgba(243,248,249,.96),rgba(222,233,237,.94));border-color:rgba(239,247,250,.8);color:#1a3442;box-shadow:0 20px 60px rgba(3,15,23,.12)}
+.plan-panel .eyebrow{color:#425e6f}
+.plan-panel h2{margin-bottom:4px}
+.plan-day{font-size:10px;color:#425e6f;margin:0}
+.plan-count{margin:16px 0 8px;font-size:13px}
+.plan-count strong{font-weight:600}
+.plan-bar{height:8px;border-radius:8px;background:rgba(36,76,93,.14);overflow:hidden}
+.plan-bar span{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,#2c7d74,#4fae9f);transition:width .3s}
+.plan-tasks{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px}
+.plan-task{border:1px solid #b2c3cb;border-radius:16px;background:rgba(255,255,255,.45);padding:12px}
+.plan-task[data-done=true]{background:rgba(207,223,223,.55);border-color:#9fb8b6}
+.plan-row{display:flex;align-items:center;gap:12px}
+.plan-manual{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer}
+.plan-mark{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid #7f97a3;display:grid;place-items:center;font-size:13px;font-weight:700;color:#f1f7fa}
+.plan-task[data-done=true] .plan-mark{background:#2c7d74;border-color:#2c7d74}
+.plan-panel input.plan-check{appearance:none;flex:none;width:24px;height:24px;min-height:0;margin:0;padding:0;border-radius:50%;border:2px solid #7f97a3;background:rgba(251,253,254,.6);box-shadow:none;cursor:pointer;display:grid;place-content:center}
+.plan-panel input.plan-check::before{content:'';width:12px;height:12px;clip-path:polygon(14% 52%,0 66%,38% 100%,100% 22%,86% 9%,37% 72%);background:#f1f7fa;transform:scale(0)}
+.plan-panel input.plan-check:checked{background:#2c7d74;border-color:#2c7d74}
+.plan-panel input.plan-check:checked::before{transform:scale(1)}
+.plan-panel input.plan-check:disabled{cursor:not-allowed;opacity:.55}
+.plan-manual:has(input:disabled){cursor:not-allowed}
+.plan-panel input.plan-check:focus-visible{outline:2px solid #244c5d;outline-offset:3px}
+.plan-text{flex:1;min-width:0}
+.plan-text strong{display:block;font-size:12px;font-weight:600;line-height:1.4}
+.plan-text small{display:block;margin-top:3px;font-size:10px;line-height:1.5;color:#425e6f}
+.plan-panel .plan-info{flex:none;width:28px;height:28px;min-height:28px;padding:0;border-radius:50%;border:1px solid #8a9fa9;background:rgba(255,255,255,.4);color:#244c5d;font:italic 600 13px Georgia,serif}
+.plan-panel .plan-info[aria-expanded=true]{background:#244c5d;border-color:#244c5d;color:#f1f7fa}
+.plan-panel .plan-info:focus-visible{outline:2px solid #244c5d;outline-offset:3px}
+.plan-info-text,.plan-info-text p{margin:10px 0 0;font-size:11px;line-height:1.7;color:#425e6f}
+.plan-info-text .text-button{color:#244c5d;font-size:11px;min-height:32px;padding:6px 0 0}
+.plan-foot{margin:16px 0 0;padding-top:12px;border-top:1px solid #b2c3cb;font-size:10px;line-height:1.7;color:#425e6f}
 .zones-checkin .fields{grid-template-columns:1fr 1fr;gap:20px 14px}
 .zones-checkin .field.bp,.zones-checkin .field:last-child{grid-column:1/-1}
 .zones-body{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px}
 @media(max-width:1250px){.app-main{padding:28px 25px 0}.zones-body{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:800px){.app-shell{grid-template-columns:minmax(0,1fr)}.sidebar{position:static;height:auto;gap:14px;padding:16px 18px;border-right:0;border-bottom:1px solid rgba(224,239,247,.18)}.sidebar-links{grid-template-columns:repeat(3,minmax(0,1fr))}.sidebar-links button{padding:8px 10px 8px 8px;gap:9px}.sidebar-links small{display:none}.sidebar-note{display:none}.app-main{padding:29px 18px 0}}
+@media(max-width:800px){.app-shell{grid-template-columns:minmax(0,1fr)}.sidebar{position:static;height:auto;gap:14px;padding:16px 18px;border-right:0;border-bottom:1px solid rgba(224,239,247,.18)}.sidebar-links{grid-template-columns:repeat(3,minmax(0,1fr))}.sidebar-links button{padding:8px 10px 8px 8px;gap:9px}.brand-link{max-width:300px}.sidebar-note{display:none}.app-main{padding:29px 18px 0}}
 @media(max-width:430px){.app-main{padding:28px 15px 0}.sidebar-links{grid-template-columns:minmax(0,1fr)}}
 @media print{.sidebar,.page-toolbar{display:none}.app-shell{display:block}}
 /* Page accents: one decorative colour per page, used for icons, headings and highlights.

@@ -50,6 +50,10 @@ ASSETS BUNDLED WITH THE FRONTEND
   provenance note: frontend/public/licenses/Astronaut-model-NOTICE.txt
   https://sketchfab.com/3d-models/astronaut-287589e324b942b8be57dbd6c539b2ab
 
+- Crew Health Compass logo (frontend/src/assets/brand/crew-health-compass-logo.png),
+  made for the team with OpenAI's ChatGPT image generation. The file is
+  unchanged and keeps its embedded C2PA content credentials, which record this.
+
 SOFTWARE DEPENDENCIES (installed by npm and pip; not stored in this repository)
 
 - Frontend: React and React DOM (MIT), three.js (MIT), Vite and
@@ -61,5 +65,5 @@ SOFTWARE DEPENDENCIES (installed by npm and pip; not stored in this repository)
 
 AI ASSISTANCE
 
-The team used AI coding assistants (Codex and Claude Code). Every session is
-logged in docs/AI_USAGE.md.
+The team used AI coding assistants (Codex and Claude Code) and, for the logo,
+ChatGPT image generation. Every session is logged in docs/AI_USAGE.md.

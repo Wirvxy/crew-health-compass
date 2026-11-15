@@ -540,3 +540,33 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
   - API re-test: 415 for `text/plain`, 422 for every impossible reading and for deep JSON, and no 500 in the log.
 - **Not changed:** timestamps far outside the mission calendar (for example the year 9999) are still accepted; that would also need a team rule.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Sidebar, logo, Plan for today, Mars-ready removal
+
+- **Task:** D's brief, which authorised the frontend changes.
+- **Sidebar:** the order is now Daily check-in, Body & systems, NASA lab data, Mission Environment, with icon and title only. Each page still shows its SIMULATED or RECORDED badge in its heading. The app now opens on Daily check-in.
+- **Logo:** `frontend/src/assets/brand/crew-health-compass-logo.png` is D's file, byte for byte (SHA-256 `7413f5dd…`).
+  - Its embedded C2PA credentials say it was made with OpenAI's ChatGPT image generation, so it was not re-encoded or cropped.
+  - CSS shows only its visible area (1884 × 344 of 2172 × 724 px).
+  - It is a link to Daily check-in that switches page in place, so drafts and results are kept.
+  - `NOTICE` records where it came from.
+- **NASA page:** the "Complete API responses" debug panel was removed. The data, charts, records table and source links are unchanged.
+- **Mars-ready:** removed. It only simulated a 12-minute ground-link delay (queue, timer, "Simulate link return") and changed no data or assessment. The app keeps its previous default: local session, Offline, no ground connection.
+- **Plan for today:** a new card beside the check-in form (below it on screens up to 1150 px).
+  - It has four tasks. Today's check-in, sleep and mood are done automatically, only after the backend has assessed a check-in, and the optional ones only if that check-in included them. "Review today's result" is ticked by the user.
+  - The day is the computer's clock in UTC: the frontend had no running mission clock, and the form's mission time is a fixed synthetic 2030 calendar. Progress resets at 00:00 UTC, also while the page is open.
+  - Progress is kept per astronaut in `localStorage`: the app had no saved state, and the backend does not store check-ins yet. Only task flags and times are kept, never readings.
+  - New files: `services/dailyPlan.ts` (pure rules), `services/dailyPlanStore.ts`, `components/PlanForToday.tsx`, and `tests/dailyPlan.test.ts` (`npm test`, Node's test runner, no new dependency).
+- **Checks (local, Edge via Playwright 1.64.1 outside the repo, network blocked):**
+  - `npm run build` passes, and `npm test` passes 9/9.
+  - UI checks pass 19/19:
+    - sidebar order and titles, logo loading, logo link and draft kept;
+    - no API panel, glucose 90 / +12.67, trajectory and 4-astronaut comparison;
+    - no Mars-ready on any page;
+    - plan beside the form at 1440 px and below it at 900 and 375 px, with no sideways scroll;
+    - an invalid form, a refused request or a 422 leaves the check-in task open; success sets 3 of 4 with sleep and mood, 1 of 4 without;
+    - per-astronaut progress survives a reload;
+    - a controlled clock from 23:58 to 00:01 UTC resets the card while open and after a reload, and reopening two days later shows 0 of 4.
+  - The earlier 50-check suite passes 49/49 (the Mars-ready check was removed).
+- **Not changed:** CI does not run `npm test` yet. The backend is unchanged.
+- **Human review:** None yet.
