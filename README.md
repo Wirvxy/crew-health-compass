@@ -71,7 +71,7 @@ npm ci
 npm run dev
 ```
 
-Open the address Vite prints, usually `http://localhost:5173`. The settings and their defaults are in [`.env.example`](.env.example) and [`frontend/.env.example`](frontend/.env.example).
+Open the address Vite prints, usually `http://localhost:5173`, and click a crew profile. There are no passwords: profiles are demo access control (see [Security and data integrity](#security-and-data-integrity)). The settings and their defaults are in [`.env.example`](.env.example) and [`frontend/.env.example`](frontend/.env.example). For deployment notes (one origin, HTTPS cookie setting, database volume), see [api/README.md](api/README.md#profiles-storage-and-migration).
 
 **Tests:**
 
@@ -131,12 +131,13 @@ The scope is kept small enough for a hackathon. Each protection has been tested 
 
 | Protection | What it does | Status |
 |---|---|---|
-| Input validation | Mode 1 check-ins are validated with Iliass Barrou's contract at the API. Malformed values, unknown units, unknown crew IDs and non-JSON bodies are refused with HTTP 422 and a message. | Built and tested locally |
+| Input validation | Mode 1 check-ins are validated with Iliass Barrou's contract at the API. Malformed values, unknown units and malformed bodies are refused with HTTP 422 and a message. | Built and tested locally |
 | Plausibility checks | Physically impossible values become a "data problem, re-measure" result instead of a finding | Planned |
 | Offline operation | All three datasets load from local files at startup. Tests block network access during loading and assessment. | Built and tested locally |
-| Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint | Built and tested locally. No check-ins are stored in it yet, and the response shape is provisional |
+| Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint | Built and tested locally. Stored check-ins are not in the chain yet, and the response shape is provisional |
 | Secret and dependency scanning | CI runs npm audit, pip-audit and a gitleaks scan of the full Git history on every PR into `main` and every push to `main`. Binary files are not scanned for secrets. | Running in CI |
-| Demo access control | A fixed demo token per role (astronaut or flight surgeon): basic **authentication** (identifying the caller through the token) and **authorization** (checking what that caller may access) | Planned |
+| Demo access control | Clicking a crew profile opens a server-side session (HttpOnly, SameSite=Strict cookie; only its hash is stored). Personal endpoints take the astronaut from the session, refuse another astronaut's data (403), and answer 401 without a session. Changes sent from another website are refused. Logging out ends the session on the server and clears the screen. | Built and tested locally. No passwords, by the team's choice |
+| Separate workspaces | Check-ins, results and "Plan for today" are stored per astronaut. A new profile gets a fresh screen; late answers, other tabs, Back and stale tabs are checked so no profile sees another's data. | Built and tested locally |
 | Encryption at rest | Measurement values encrypted inside the SQLite file | Planned |
 | Signed report packet | Ed25519 signature; changing one byte makes verification fail | Planned, if time permits |
 
@@ -144,7 +145,7 @@ Each protection stays **Planned** until it is implemented and tested.
 
 **Known limits:**
 
-- Demo access control is **not** production-ready account management. There are no user accounts and no passwords, and the tokens are fixed demo values. Anyone who has a token can act as that caller. A token that is shared or publicly exposed does not establish a private user identity.
+- Demo access control is **not** production-ready account management. There are no passwords, so anyone using the computer can open any profile: it keeps the four workspaces apart, but it does not prove who someone is. There is no flight-surgeon role yet.
 - The hash chain detects edits to stored records, but it has two blind spots:
   - Someone who can write to the database file can change a record and recompute every later hash, because the hash uses no secret key.
   - Deleting records from the end leaves a valid, shorter chain.

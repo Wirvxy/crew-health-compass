@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 
 from app import radiation
 from app.main import app
+from conftest import signed_in
 from engine.radiation_history import (
     DEFAULT_CSV_PATH,
     load_radiation_history,
@@ -148,7 +149,7 @@ def test_missing_csv_gives_503_without_paths_and_other_modes_still_work(monkeypa
             assert str(tmp_path) not in response.text and "nowhere" not in response.text
         assert client.get("/health").status_code == 200
         assert client.get("/datasets/osd575/astronauts").status_code == 200
-        assert client.get("/api/monitoring/astronauts").status_code == 200
+        assert signed_in(client, "commander").get("/api/monitoring/astronauts").status_code == 200
 
 
 def test_unusable_csv_gives_503(monkeypatch, tmp_path):

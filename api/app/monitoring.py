@@ -3,10 +3,16 @@
 These endpoints only expose Person A's Mode 1 engine (engine/mode1_*.py):
 - At application startup, load_history() reads Person B's synthetic ISS
   dataset once (data/mode1/ by default) and builds A's HistoryIndex.
+- Both endpoints need a profile session (app/sessions.py, demo access control)
+  and answer only for the session's astronaut.
 - POST /api/monitoring/assess accepts only a JSON body. It checks the request
-  with A's validate_manual_check_in(), then with this API's format and logic
-  checks (app/checkin_checks.py), and returns A's assess_check_in() result
+  with A's validate_manual_check_in(), refuses a check-in that names another
+  astronaut than the session's (403), runs this API's format and logic checks
+  (app/checkin_checks.py), stores the check-in and its assessment for that
+  astronaut (app/storage.py), and returns A's assess_check_in() result
   unchanged. That function checks its own output with validate_assessment().
+  Stored check-ins are not added to the baseline: A's engine compares every
+  check-in with the synthetic history only.
 - Only A's M2 statistical detection runs. The M3 Isolation Forest
   (engine/mode1_ml.py) is never imported here.
 
@@ -26,6 +32,7 @@ import csv
 import json
 import logging
 import os
+import sqlite3
 import zipfile
 from collections import defaultdict
 from dataclasses import dataclass
@@ -33,9 +40,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from app import storage
 from app.checkin_checks import check_readings
+from app.sessions import personal, same_site
 from engine.mode1_contracts import CONTEXTS, validate_manual_check_in
 from engine.mode1_detection import HistoryIndex, assess_check_in
 from engine.mode1_ingestion import DEFAULT_DATA_PATH, load_monitoring_data
@@ -138,12 +147,18 @@ def _loaded() -> Mode1Data:
     )
 
 
+def astronaut_ids() -> list[str]:
+    """The crew IDs of the synthetic history: the profiles a session can be opened for."""
+    return sorted(_loaded().astronauts)
+
+
 @router.get("/astronauts")
-def list_astronauts() -> dict[str, Any]:
-    """Synthetic crew IDs, with the time range of their history in each context.
+def list_astronauts(astronaut: str = Depends(personal)) -> dict[str, Any]:
+    """The signed-in astronaut, with the time range of their history in each context.
 
     A check-in is compared only with earlier readings of the same astronaut in
     the same context, so demo check-ins need a timestamp after enough history.
+    Other astronauts' history is personal to them and is not listed.
     """
     data = _loaded()
     return {
@@ -151,21 +166,21 @@ def list_astronauts() -> dict[str, Any]:
         "provenance": "simulated",
         "note": NOTE,
         "manual_contexts": sorted(CONTEXTS),
-        "astronauts": [
-            {"astronaut_id": astronaut, "history": contexts}
-            for astronaut, contexts in sorted(data.astronauts.items())
-        ],
+        "astronauts": [{"astronaut_id": astronaut, "history": data.astronauts[astronaut]}],
     }
 
 
 @router.post("/assess")
-async def assess(request: Request) -> dict[str, Any]:
-    """Assess one manual check-in with A's M2 statistical detection.
+async def assess(request: Request, astronaut: str = Depends(personal)) -> dict[str, Any]:
+    """Assess one manual check-in with A's M2 statistical detection, and store it.
 
-    Errors use one shape, {"detail": "<message>"}: 415 when the body is not
-    sent as JSON, 422 for an invalid check-in, 503 when the history is not loaded.
+    Errors use one shape, {"detail": "<message>"}: 401 without a profile
+    session, 403 for a check-in naming another astronaut or sent from another
+    website, 415 when the body is not sent as JSON, 422 for an invalid
+    check-in, 503 when the history is not loaded or the check-in cannot be saved.
     """
     data = _loaded()
+    same_site(request)
     # Only JSON is accepted. Another website can make a visitor's browser send a
     # text/plain or form POST here without asking this server first. For a JSON
     # POST, the browser must ask first (a CORS preflight), and this API never
@@ -184,13 +199,20 @@ async def assess(request: Request) -> dict[str, Any]:
         raise HTTPException(422, "Invalid check-in: the request body must be JSON.") from None
     try:
         check_in = validate_manual_check_in(payload)
+    except ValueError as error:
+        raise HTTPException(422, f"Invalid check-in: {error}") from None
+    # The session decides whose check-in this is. The body must agree, so a
+    # request cannot add a check-in to another astronaut's history.
+    if check_in["astronaut_id"] != astronaut:
+        raise HTTPException(403, "This check-in names another astronaut than your profile.")
+    try:
         check_readings(payload["indicators"], check_in["indicators"])
     except ValueError as error:
         raise HTTPException(422, f"Invalid check-in: {error}") from None
-    if check_in["astronaut_id"] not in data.astronauts:
-        raise HTTPException(
-            422,
-            f"Invalid check-in: unknown astronaut_id {check_in['astronaut_id']!r}. "
-            f"Known IDs: {', '.join(sorted(data.astronauts))}.",
-        )
-    return assess_check_in(check_in, data.history)
+    result = assess_check_in(check_in, data.history)
+    try:
+        storage.save_checkin(astronaut, check_in, result)
+    except sqlite3.Error:
+        logger.exception("Check-in could not be saved")
+        raise HTTPException(503, "The check-in was assessed but could not be saved. Try again.") from None
+    return result

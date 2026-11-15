@@ -1,8 +1,9 @@
 import type { MonitoringResult } from './monitoring'
 // A small text-only PDF writer using the standard Helvetica font; no runtime dependency.
-export function downloadMonitoringReport(result: MonitoringResult, example: boolean) {
+/** `example` is null for a stored check-in: whether it used example values is not recorded. */
+export function downloadMonitoringReport(result: MonitoringResult, example: boolean | null) {
   const lines = ['CREW HEALTH COMPASS - MODE 1 MISSION HEALTH MONITOR', `${result.astronaut_id} / ${result.activity_context} / ${result.timestamp}`, 'Research prototype, not a diagnostic device.',
-    'Statistical comparison with synthetic personal history (fictional crew and readings).', `Input: ${example ? 'example values filled by the app' : 'user-entered'}`, '',
+    'Statistical comparison with synthetic personal history (fictional crew and readings).', `Input: ${example === null ? 'stored check-in (example or user-entered: not recorded)' : example ? 'example values filled by the app' : 'user-entered'}`, '',
     `Overall status: ${result.overall_status}`, `Affected systems: ${result.affected_systems.join(', ') || 'none'}`, `Body marker: ${result.body_marker ?? 'none'}`, result.explanation, '']
   for (const e of result.evidence) {
     const s = e.statistics

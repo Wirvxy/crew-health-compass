@@ -1,5 +1,5 @@
 // Mode 1 transport for D's API (docs/mode1-api.md). The backend does all assessment; this file only sends and checks shapes.
-import { API_BASE } from './api'
+import { personalFetch, SessionChanged } from './session'
 
 export const CONTEXTS = ['rest', 'exercise', 'recovery', 'morning_check', 'inflight_vitals_check', 'other'] as const
 export type ActivityContext = typeof CONTEXTS[number]
@@ -32,10 +32,11 @@ export class MonitoringApiError extends Error {
   }
 }
 
-async function request(path: string, init: RequestInit): Promise<unknown> {
+/** A personal request (the profile session's astronaut only); see services/session.ts. */
+export async function request(path: string, astronautId: string, init: RequestInit = {}): Promise<unknown> {
   let response: Response
-  try { response = await fetch(`${API_BASE}/api/monitoring${path}`, { ...init, headers: { Accept: 'application/json', ...init.headers } }) }
-  catch (error) { if ((error as Error).name === 'AbortError') throw error; throw new MonitoringApiError(0, 'Cannot reach the backend. Check that the local API is running, then retry.') }
+  try { response = await personalFetch(path, astronautId, init) }
+  catch (error) { if (error instanceof SessionChanged || (error as Error).name === 'AbortError') throw error; throw new MonitoringApiError(0, (error as Error).message) }
   let body: unknown = null
   try { body = await response.json() } catch { /* A non-JSON error is still an HTTP error. */ }
   if (!response.ok) throw new MonitoringApiError(response.status, (body as { detail?: unknown } | null)?.detail)
@@ -43,7 +44,7 @@ async function request(path: string, init: RequestInit): Promise<unknown> {
 }
 
 const STATUSES = ['normal', 'unusual', 'insufficient_data', 'rule_supported_warning']
-function checkResult(value: unknown): MonitoringResult {
+export function checkResult(value: unknown): MonitoringResult {
   const r = value as MonitoringResult
   const ok = !!r && STATUSES.includes(r.overall_status) && Array.isArray(r.evidence) && Array.isArray(r.insufficient_data)
     && Array.isArray(r.affected_systems) && (r.body_marker === null || typeof r.body_marker === 'string') && typeof r.explanation === 'string'
@@ -51,9 +52,11 @@ function checkResult(value: unknown): MonitoringResult {
   return r
 }
 
-export const monitoringAstronauts = (signal?: AbortSignal) => request('/astronauts', { signal }) as Promise<MonitoringAstronauts>
+/** The signed-in astronaut's synthetic history ranges (the API lists no other astronaut). */
+export const monitoringAstronauts = (astronautId: string, signal?: AbortSignal) => request('/api/monitoring/astronauts', astronautId, { signal }) as Promise<MonitoringAstronauts>
+/** Assessed and stored for the session's astronaut, who must be the one the check-in names. */
 export const assessCheckIn = (body: CheckInRequest, signal?: AbortSignal) =>
-  request('/assess', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }, signal }).then(checkResult)
+  request('/api/monitoring/assess', body.astronaut_id, { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }, signal }).then(checkResult)
 
 /** Display only: maps the backend's status to the existing status styles. Red is reserved for an approved rule. */
 export const STATUS_VIEW = {

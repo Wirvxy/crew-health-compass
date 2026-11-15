@@ -13,11 +13,12 @@ const CONTEXT_HELP: Record<string, string> = {
   inflight_vitals_check: 'compares heart rate and breathing rate with vitals-check history', other: 'no comparable history: nothing is compared',
 }
 interface Props {
-  crew: string; crews: string[]; draft: CrewDraft; submissions: Record<string, CheckIn>; historyEnd: string | null
+  draft: CrewDraft; submitted: CheckIn | null; historyEnd: string | null
   pending: boolean; error: string; result: MonitoringResult | null
   onChange: (draft: CrewDraft) => void; onExample: (kind: ExampleKind) => void; onSubmit: (values: DailyDraft) => void; onShowBody: () => void
 }
-export default function DailyCheckIn({ crew, crews, draft, submissions, historyEnd, pending, error, result, onChange, onExample, onSubmit, onShowBody }: Props) {
+/** The signed-in astronaut's check-in form. It shows nothing about other crew profiles. */
+export default function DailyCheckIn({ draft, submitted, historyEnd, pending, error, result, onChange, onExample, onSubmit, onShowBody }: Props) {
   const [errors, setErrors] = useState<Partial<Record<DailyField, string>>>({}), form = useRef<HTMLFormElement>(null)
   function change(field: DailyField, value: string) { setErrors(e => ({ ...e, [field]: undefined })); onChange({ ...draft, values: { ...draft.values, [field]: value } }) }
   function submit(e: React.FormEvent) {
@@ -36,7 +37,6 @@ export default function DailyCheckIn({ crew, crews, draft, submissions, historyE
     const first = Object.keys(next)[0]; if (first) { form.current?.querySelector<HTMLInputElement>(`#${first}`)?.focus(); return }
     onSubmit(v)
   }
-  const submitted = submissions[crew], checked = crews.filter(c => submissions[c])
   function field(id: DailyField, label: string, unit: string, placeholder: string, optional = false) {
     return <div className="field"><label className="field-label" htmlFor={id}><span>{label}{optional && ' (optional)'}</span><span className="unit">{unit}</span></label><input id={id} name={id} type="number" step="any" inputMode="decimal" placeholder={placeholder} value={draft.values[id]} onChange={e => change(id, e.target.value)} aria-invalid={!!errors[id]} aria-describedby={`${id}-error`} required={!optional} /><p id={`${id}-error`} className="error">{errors[id]}</p></div>
   }
@@ -52,7 +52,7 @@ export default function DailyCheckIn({ crew, crews, draft, submissions, historyE
       <div className="field bp"><div className="field-label" id="bp-label"><span>Blood pressure</span><span className="unit">mmHg</span></div><div className="bp-row" role="group" aria-labelledby="bp-label">{(['systolic', 'diastolic'] as const).map((id, i) => <div className="bp-input" key={id}>{i === 1 && <span className="bp-divider" aria-hidden="true">/</span>}<input id={id} name={id} type="number" inputMode="decimal" step="any" placeholder={i === 0 ? 'Systolic' : 'Diastolic'} aria-label={`${id} blood pressure in mmHg`} value={draft.values[id]} onChange={e => change(id, e.target.value)} aria-invalid={!!errors[id]} aria-describedby="bp-error" required /></div>)}</div><p className="error" id="bp-error">{errors.systolic || errors.diastolic}</p></div>
       {field('sleep', 'Sleep duration', 'hours', 'Hours slept', true)}
       <div className="field"><label className="field-label" htmlFor="mood"><span>How are you feeling? (optional)</span><span className="unit">self-reported</span></label><select id="mood" value={draft.values.mood} onChange={e => change('mood', e.target.value)}><option value="">Not answered</option>{MOODS.map(m => <option key={m} value={m}>{m[0].toUpperCase() + m.slice(1)}</option>)}</select></div>
-    </div><div className="checkin-meta"><div className="micro" id="crew-pending">{crews.length - checked.length} crew without a check-in this session</div><div className="crew-checks">{crews.map(c => <span className={`crew-chip ${checked.includes(c) ? 'done' : ''}`} key={c}>{checked.includes(c) ? '✓' : '○'} {words(c)}</span>)}</div></div><button className="primary submit" type="submit" disabled={pending}>{pending ? 'Assessing…' : <>Submit and assess <span aria-hidden="true">→</span></>}</button><div className="submission" id="last-submitted" role="status">{submitted ? `Last submitted: ${submitted.timestamp} · ${submitted.provenance === 'simulated' ? 'EXAMPLE VALUES' : 'User-entered'}` : 'Last submitted: not yet in this session.'}</div></form>
+    </div><button className="primary submit" type="submit" disabled={pending}>{pending ? 'Assessing…' : <>Submit and assess <span aria-hidden="true">→</span></>}</button><div className="submission" id="last-submitted" role="status">{submitted ? `Last submitted: ${submitted.timestamp} · ${submitted.provenance === 'simulated' ? 'EXAMPLE VALUES' : 'User-entered'}` : 'Last submitted: not yet in this session.'}</div></form>
     {error && <p className="checkin-error" role="alert">{error}</p>}
     {result && view && <div className="result-card" aria-live="polite">
       <StatusLabel status={view.tone} label={view.label} />
@@ -62,5 +62,5 @@ export default function DailyCheckIn({ crew, crews, draft, submissions, historyE
       {result.insufficient_data.length > 0 && <details><summary>Measurements with limited history ({result.insufficient_data.length})</summary><ul>{result.insufficient_data.map(reason => <li key={reason}>{reason}</li>)}</ul></details>}
       <button type="button" className="text-button" onClick={onShowBody}>See it on the astronaut →</button>
     </div>}
-    <div className="checkin-foot">Assessed by the local backend against synthetic personal history. Drafts and results are kept for this tab session and clear on reload.<br />An exploratory monitoring result, not a diagnosis.</div></div></section>
+    <div className="checkin-foot">Assessed by the local backend against synthetic personal history. Your check-ins and results are saved on the local backend for your profile only; drafts clear on reload.<br />An exploratory monitoring result, not a diagnosis.</div></div></section>
 }

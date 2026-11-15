@@ -70,7 +70,7 @@ A owns the engine contracts and D owns the API. Change them only through a PR la
 
 - **Mode 1, Mission Health Monitor** (synthetic history):
   - Engine: `validate_manual_check_in()` and `validate_assessment()` in `engine/mode1_contracts.py`, and `assess_check_in()` (M2 statistics) in `engine/mode1_detection.py`. Guides: `engine/MODE1_CONTRACT.md` and `engine/MODE1_DETECTION.md`. The M3 model (`engine/mode1_ml.py`) is an offline experiment and is off in the API.
-  - API: `GET /api/monitoring/astronauts` and `POST /api/monitoring/assess`. Guide: `docs/mode1-api.md`.
+  - API: `GET /api/monitoring/astronauts` and `POST /api/monitoring/assess` (both need a profile session and answer only for its astronaut), and the personal workspace `GET /api/me/checkins`, `GET /api/me/plan` and `PUT /api/me/plan/review`. Guide: `docs/mode1-api.md`.
   - Statuses: `normal`, `unusual`, `insufficient_data` and `rule_supported_warning`, shown green, amber and grey. Red is reserved for an approved rule.
   - Body systems and markers: cardiovascular → chest, respiratory → lungs, wellbeing → head.
 - **Mode 2, NASA Biological Passport** (real NASA OSD-575 data):
@@ -80,13 +80,13 @@ A owns the engine contracts and D owns the API. Change them only through a PR la
   - Engine: `load_radiation_history()`, `radiation_timeline()` and `may_20_event_summary()` in `engine/radiation_history.py`. Guide: `engine/RADIATION_HISTORY.md`.
   - API: `GET /api/environment/radiation/timeline` and `GET /api/environment/radiation/events/may-20-2024`. Guide: `docs/radiation-api.md`.
 - **Audit:** `GET /audit/verify` checks the hash chain. Its response shape is provisional.
-- **Errors:** `{"detail": "<message>"}` with 415 when a check-in is not sent as JSON, 422 for invalid input, 404 for an unknown crew or visit, and 503 when a dataset is not loaded.
+- **Errors:** `{"detail": "<message>"}` with 401 without a profile session, 403 for another astronaut's data or a change sent from another website, 415 when a check-in is not sent as JSON, 422 for invalid input, 404 for an unknown crew or visit, and 503 when a dataset is not loaded.
 - **`provenance` values:** `user`, `simulated`, `dataset:<name>`. Mode 1 calls the field `data_origin`: `user` for check-ins and `synthetic` for its history.
-- **Demo access control (Planned):** every request carries a fixed demo token for one of two roles, astronaut or flight surgeon. The server uses the token for basic authentication (identifying the caller through the token) and authorization (checking what that caller may access). Always call this "demo access control". It is not production-ready account management. A token that is shared or publicly exposed does not establish a private user identity.
+- **Demo access control (built, D's choice: no passwords):** the start page lists the four synthetic crew profiles, and clicking one opens a server-side session for that astronaut (`api/app/sessions.py`). The browser holds only a random session ID in an HttpOnly, SameSite=Strict cookie; the server stores its hash. Personal endpoints take the astronaut from the session, never from the request, and every personal row has one owner (`api/app/storage.py`). Always call this "demo access control": anyone using the computer can open any profile, so it separates workspaces but does not prove who someone is. NASA lab data and Mission Environment need no session.
 - **Still open:**
   - how a check-in filled with example values is marked as simulated (the Mode 1 contract accepts only `data_origin: "user"`)
-  - storing check-ins, and adding them to the audit hash chain
-  - the name of the role-token header, the demo token values, and which astronaut each astronaut token belongs to
+  - adding stored check-ins to the audit hash chain (check-ins are stored per astronaut, outside the chain)
+  - a flight-surgeon role (the profiles are the four astronauts only)
   - physiological ranges for plausibility checks, which need a cited source, and the "data problem" result. The API already rejects readings that are impossible by definition (`api/app/checkin_checks.py`)
 
 ## 5. Branches, reviews and merging

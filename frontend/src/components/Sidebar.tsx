@@ -1,5 +1,7 @@
-import type { MouseEvent, ReactNode } from 'react'
-import logoUrl from '../assets/brand/crew-health-compass-logo.png'
+import type { ReactNode } from 'react'
+import Brand from './Brand'
+import { profileCode } from '../services/session'
+import type { Profile } from '../services/session'
 
 export type Page = 'nasa' | 'checkin' | 'body' | 'environment'
 export const HOME_PAGE: Page = 'checkin'
@@ -24,18 +26,17 @@ export function PageIcon({ page }: { page: Page }) {
   return <svg className="page-icon" viewBox="0 0 24 24" aria-hidden="true">{ICONS[page]}</svg>
 }
 
-export default function Sidebar({ page, onPage }: { page: Page; onPage: (page: Page) => void }) {
-  // The logo is a real link (it also works with a new tab), but a normal click switches page in place, keeping drafts and results.
-  function home(e: MouseEvent<HTMLAnchorElement>) {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-    e.preventDefault(); onPage(HOME_PAGE)
-  }
+// Daily check-in and Body & systems are personal to the signed-in astronaut; NASA lab data and Mission Environment
+// show the same reference data to every profile.
+export default function Sidebar({ page, profile, onPage, onSignOut }: { page: Page; profile: Profile; onPage: (page: Page) => void; onSignOut: () => void }) {
   return <nav className="sidebar" aria-label="Pages">
-    <a className="brand-link" href="./" onClick={home}>
-      <span className="brand-logo-frame"><img src={logoUrl} alt="Crew Health Compass" width={2172} height={724} decoding="async" /></span>
-      <span className="sr-only">: go to Daily check-in</span>
-    </a>
+    <Brand label="go to Daily check-in" onHome={() => onPage(HOME_PAGE)} />
     <ul className="sidebar-links">{PAGES.map(p => <li key={p.id}><button data-page={p.id} aria-current={p.id === page ? 'page' : undefined} onClick={() => onPage(p.id)}><span className="nav-icon"><PageIcon page={p.id}/></span><span className="nav-text"><strong>{p.label}</strong></span></button></li>)}</ul>
-    <p className="sidebar-note">Research prototype, not a diagnostic device.</p>
+    <div className="sidebar-profile">
+      <span className="profile-chip" aria-hidden="true">{profileCode(profile.astronaut_id)}</span>
+      <span className="profile-who"><small>Signed in as</small><strong id="signed-in-name">{profile.name}</strong></span>
+      <button type="button" id="logout" className="logout" onClick={onSignOut}>Log out</button>
+    </div>
+    <p className="sidebar-note">Research prototype, not a diagnostic device. Profiles are demo access control, without passwords.</p>
   </nav>
 }
