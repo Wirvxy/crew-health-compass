@@ -1,0 +1,4 @@
+# Keep the Curiosity RAD CSV byte-for-byte as exported (Windows line endings), so the
+# SHA-256 that the radiation API reports is the same on every computer:
+# d514a88fdc9a539a3b470b57a4d28c95cec6b1494474c696a27d629cda1cdea5
+raw[[:space:]]data/**/*.csv -text
