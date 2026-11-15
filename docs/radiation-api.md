@@ -8,7 +8,7 @@ For Taha Errassif (frontend), from Monssif El Haouari (backend). Two read-only e
 
 ## Start the backend
 
-Same as before (see the [root README](../README.md#run-it-locally)). At startup the API reads `raw data/NASA Curiosity radiation/nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv` once; set `CREW_HEALTH_RAD_CSV` to use another file. Nothing is downloaded.
+Same as before (see the [root README](../README.md#run-it-locally)). At startup the API reads `data/radiation/nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv` once; set `CREW_HEALTH_RAD_CSV` to use another file. Nothing is downloaded.
 
 ## Endpoints
 

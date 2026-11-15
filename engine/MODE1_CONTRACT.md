@@ -4,7 +4,7 @@ Person B's ISS simulation contains 3,000 **synthetic** observation rows. It uses
 
 ## Load the data
 
-Use Python 3.11 or later from the repository root. The default source is the repository's `iss-synthetic-3000/` directory. On a branch without that directory, pass the path to Person B's ZIP or its extracted directory directly.
+Use Python 3.11 or later from the repository root. The default source is the repository's `data/mode1/` directory. On a branch without that directory, pass the path to Person B's ZIP or its extracted directory directly.
 
 ```python
 from engine.mode1_ingestion import load_monitoring_data, select_series, serialize_observation

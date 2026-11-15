@@ -101,7 +101,7 @@ _state: Osd575Data | Unavailable | None = None
 
 
 def data_dir() -> Path:
-    """Folder holding the four TRANSFORMED CSVs (default: repository download/)."""
+    """Folder holding the four TRANSFORMED CSVs (default: repository data/mode2/)."""
     value = os.environ.get(DATA_DIR_ENV_VAR)
     return Path(value) if value else DEFAULT_DATA_DIR
 
@@ -158,7 +158,7 @@ def load_dataset() -> None:
         _state = Unavailable(
             f"OSD-575 data file not found: {name}. Put the four OSD-575 "
             f"TRANSFORMED CSV files in the folder set by {DATA_DIR_ENV_VAR} "
-            "(default: the repository's download/ folder), then restart the "
+            "(default: the repository's data/mode2/ folder), then restart the "
             "server. Nothing is downloaded at runtime."
         )
     except (OSError, ValueError, csv.Error, UnicodeDecodeError):

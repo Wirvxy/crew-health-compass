@@ -2,7 +2,7 @@
 
 These endpoints only expose Person A's Mode 1 engine (engine/mode1_*.py):
 - At application startup, load_history() reads Person B's synthetic ISS
-  dataset once (iss-synthetic-3000/ by default) and builds A's HistoryIndex.
+  dataset once (data/mode1/ by default) and builds A's HistoryIndex.
 - POST /api/monitoring/assess checks the request with A's
   validate_manual_check_in() and returns A's assess_check_in() result
   unchanged. That function checks its own output with validate_assessment().
@@ -73,7 +73,7 @@ _state: Mode1Data | Unavailable | None = None
 
 
 def data_source() -> Path:
-    """Folder or ZIP holding B's synthetic dataset (default: iss-synthetic-3000/)."""
+    """Folder or ZIP holding B's synthetic dataset (default: data/mode1/)."""
     value = os.environ.get(DATA_ENV_VAR)
     return Path(value) if value else DEFAULT_DATA_PATH
 
@@ -108,7 +108,7 @@ def load_history() -> None:
         _state = Unavailable(
             "Mode 1 synthetic history not found. Put Person B's iss-synthetic-3000 "
             f"folder or ZIP where {DATA_ENV_VAR} points (default: the repository's "
-            "iss-synthetic-3000/ folder), then restart the server."
+            "data/mode1/ folder), then restart the server."
         )
     except (OSError, ValueError, csv.Error, zipfile.BadZipFile):
         logger.exception("Mode 1 synthetic history could not be read")

@@ -19,7 +19,7 @@ From the repository root (A's `engine/` must be importable, so don't start it fr
 api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
 ```
 
-The server listens on `http://127.0.0.1:8000`. Data comes from the four `*_TRANSFORMED.csv` files in `download/`, or from the folder set in `CREW_HEALTH_OSD575_DIR`. Nothing is downloaded at runtime.
+The server listens on `http://127.0.0.1:8000`. Data comes from the four `*_TRANSFORMED.csv` files in `data/mode2/`, or from the folder set in `CREW_HEALTH_OSD575_DIR`. Nothing is downloaded at runtime.
 
 ### Startup loading
 
@@ -241,7 +241,7 @@ These are real response bodies from the local server.
 | Missing `panel` or `biomarker` (endpoints 5 and 6) | 422 | `{"detail":[{"type":"missing","loc":["query","biomarker"],"msg":"Field required","input":null}]}` |
 | Unknown panel | 422 | FastAPI validation error listing the four allowed panels |
 | Visit with no postflight result (endpoint 4) | 404 | `{"detail":"No postflight result for visit 'L-3'. Postflight visits for C001: R+1, R+45, R+82, R+194."}` |
-| Data missing at startup | 503 | `{"detail":"OSD-575 data file not found: LSDS-8_Comprehensive_Metabolic_Panel_CMP_TRANSFORMED.csv. Put the four OSD-575 TRANSFORMED CSV files in the folder set by CREW_HEALTH_OSD575_DIR (default: the repository's download/ folder), then restart the server. Nothing is downloaded at runtime."}` |
+| Data missing at startup | 503 | `{"detail":"OSD-575 data file not found: LSDS-8_Comprehensive_Metabolic_Panel_CMP_TRANSFORMED.csv. Put the four OSD-575 TRANSFORMED CSV files in the folder set by CREW_HEALTH_OSD575_DIR (default: the repository's data/mode2/ folder), then restart the server. Nothing is downloaded at runtime."}` |
 | Data unreadable at startup | 503 | `{"detail":"OSD-575 data files could not be read or analysed. Check that they are the original NASA TRANSFORMED CSV files, then restart the server."}` |
 
 ## Tested vs. assumed

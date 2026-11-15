@@ -2,7 +2,7 @@
 
 The dataset is loaded by the application's startup step, so each test uses
 `with TestClient(app)`, which runs that step. Tests read the real CSV files
-in download/ through A's engine, except where a test points the data folder
+in data/mode2/ through A's engine, except where a test points the data folder
 somewhere else on purpose.
 """
 

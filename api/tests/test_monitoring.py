@@ -2,7 +2,7 @@
 
 The synthetic history is loaded by the application's startup step, so each
 test uses `with TestClient(app)`, which runs that step. Tests read Person B's
-iss-synthetic-3000/ files through A's engine, except where a test points the
+data/mode1/ files through A's engine, except where a test points the
 data somewhere else on purpose. The history ends on 2030-06-29.
 """
 

@@ -15,15 +15,14 @@ Items marked ***Proposal*** were suggested by D and the team has not agreed to t
 | Member | Name | Role | Owns | Usual agent |
 |---|---|---|---|---|
 | A | Iliass Barrou | Tech lead, analytics engine | `engine/` | Codex |
-| B | Ayman El Kerboubi | Data, health science, evaluation | `iss-synthetic-3000/`, `raw data/` | Codex |
+| B | Ayman El Kerboubi | Data, health science, evaluation | `data/` | Codex |
 | C | Taha Errassif | Frontend and UX | `frontend/` | Codex |
 | D | Monssif El Haouari | Backend, security, data integrity, release | `api/`, `.github/` (CI), deployment | Claude Code |
 
-The roadmap also planned `contracts/` (A), `catalogue/`, `data/` and `eval/` (B), and `security/` (D). They do not exist yet; their owners create them when needed.
+The roadmap also planned `contracts/` (A), `catalogue/` and `eval/` (B), and `security/` (D). They do not exist yet; their owners create them when needed.
 
 ***Proposal:*** ownership not yet covered by the plan:
 
-- `download/` (the NASA files uploaded at kickoff) belongs to B. Until B decides, no agent moves, renames, edits or deletes these files.
 - `docs/` and the root docs (`README.md`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`) belong to D.
 
 **Edit only the files your role and task allow.** There are two exceptions:

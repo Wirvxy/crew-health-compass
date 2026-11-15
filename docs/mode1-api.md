@@ -13,7 +13,7 @@ api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
 ```
 
 - **Base URL:** `http://127.0.0.1:8000`. Interactive docs are at `http://127.0.0.1:8000/docs`.
-- **Startup:** loads Person B's synthetic history (`iss-synthetic-3000/`) and the NASA OSD-575 files (`download/`) once.
+- **Startup:** loads Person B's synthetic history (`data/mode1/`) and the NASA OSD-575 files (`data/mode2/`) once.
 - **Offline:** everything comes from local files. Nothing is downloaded, and no external AI service is called.
 
 ## 2. Calling it from the frontend
