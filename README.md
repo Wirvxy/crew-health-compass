@@ -10,7 +10,7 @@ The app has two clearly separated modes, plus a historical Mission Environment t
 
 | Mode | Data | What you can do |
 |---|---|---|
-| **Mode 1: Mission Health Monitor** | Synthetic ISS history: 4 fictional crew members, 3,000 readings (`data/mode1/`) | Enter a daily check-in (heart rate, respiratory rate, blood pressure, optional sleep and mood). The backend compares it with the same astronaut's earlier readings in the same activity context. The 3D astronaut shows the result, and the evidence panel shows the numbers behind it. |
+| **Mode 1: Mission Health Monitor** | Synthetic ISS history: 4 fictional crew members, 3,000 readings (`data/mode1/`) | Enter a daily check-in (heart rate, respiratory rate, blood pressure, optional sleep and mood). The backend compares it with the same astronaut's earlier readings in the same activity context. The 3D astronaut shows the result, and the evidence panel shows the numbers behind it. Each crew profile keeps its own check-ins and "Plan for today", and a result can be exported as a two-page PDF report made on the computer. |
 | **Mode 2: NASA Biological Passport** | Real NASA study OSD-575: blood serum panels of the 4 Inspiration4 crew members (`data/mode2/`) | Pick a crew member and a postflight visit, and see each biomarker compared with that person's own preflight average and the supplied laboratory limits, plus trajectories across all visits. |
 | **Mission Environment: Mars Radiation History** | Real NASA Curiosity RAD measurements on the Martian surface: 5,971 dose rates, 7 March–20 May 2024 (`data/radiation/`) | Explore the radiation timeline (zoom, date range, hover), and the 20 May 2024 solar event compared with the week before. It describes the Mars environment only and never changes a health status. |
 
@@ -48,7 +48,7 @@ The API also keeps a **hash-chained audit log** (`GET /audit/verify`). Check-ins
 | `data/radiation/` | Curiosity RAD radiation CSV for the Mission Environment tab | Ayman El Kerboubi |
 | `frontend/` | React + Vite + TypeScript user interface | Taha Errassif |
 | `api/` | FastAPI app: Mode 1 and Mode 2 endpoints, SQLite audit log, tests | Monssif El Haouari |
-| `docs/` | API guides for the frontend, JSON examples, screenshots, AI-usage log | Monssif El Haouari (*proposal*) |
+| `docs/` | API guides for the frontend, JSON examples, screenshots | Monssif El Haouari (*proposal*) |
 | `.github/workflows/` | CI: frontend build and audit, backend and engine tests, dependency audit, secret scan | Monssif El Haouari |
 
 ## Run it locally
@@ -112,9 +112,9 @@ Every record says where it came from: `user` (entered in the app), `simulated`/`
 
 The metadata files are in `data/mode2/OSD-575_metadata_OSD-575-ISA/`.
 
-**Not yet checked (for Ayman El Kerboubi):** the OSDR web page itself, the data licence and terms of use, and whether these files exactly match the official download.
+**Source and terms:** OSD-575 was publicly released by NASA's Open Science Data Repository on 14 May 2024. It is NASA material, redistributed here unchanged with the citation above and in [NOTICE](NOTICE). The files have not been compared byte for byte with the current official download.
 
-**Open question for the team:** the Inspiration4 crew is publicly known, so coded IDs plus recorded sex may not keep individuals anonymous. The team should decide before this data appears in a public demo.
+**Privacy:** the files name subjects only by NASA's coded IDs (C001–C004), and the app shows only those codes. The team made no attempt to link them to real people. Because the Inspiration4 crew is publicly known, the codes are not a guarantee of anonymity; the data is shown exactly as NASA released it.
 
 ### Synthetic ISS history (`data/mode1/`)
 
@@ -131,7 +131,7 @@ The scope is kept small enough for a hackathon. Each protection has been tested 
 | Protection | What it does | Status |
 |---|---|---|
 | Input validation | Mode 1 check-ins are validated with Iliass Barrou's contract at the API. Malformed values, unknown units and malformed bodies are refused with HTTP 422 and a message. | Built and tested locally |
-| Plausibility checks | Physically impossible values become a "data problem, re-measure" result instead of a finding | Planned |
+| Check-in logic checks | Readings that cannot be real are refused with HTTP 422: not a plain number, zero or below, systolic not above diastolic, or more than 24 hours of sleep. Physiological ranges (for example a highest plausible heart rate) need a cited source and are not set. | Logic checks built and tested locally; physiological ranges planned |
 | Offline operation | All three datasets load from local files at startup. Tests block network access during loading and assessment. | Built and tested locally |
 | Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint | Built and tested locally. Stored check-ins are not in the chain yet, and the response shape is provisional |
 | Secret and dependency scanning | CI runs npm audit, pip-audit and a gitleaks scan of the full Git history on every PR into `main` and every push to `main`. Binary files are not scanned for secrets. | Running in CI |
@@ -185,7 +185,8 @@ The team used AI tools to help with parts of the code, the documentation and som
 - NASA Open Science Data Repository, study [OSD-575](https://osdr.nasa.gov/bio/repo/data/studies/OSD-575) (files in `data/mode2/`).
 - NASA Curiosity RAD Level 2 data ([MSL_RAD_OBS-L2](https://data.nasa.gov/dataset/mars-science-laboratory-msl-radiation-assessment-detector-rad-level-2-observation-dosimetr)), exported by Ayman El Kerboubi (`data/radiation/`).
 - The synthetic dataset's historical reference tables are cited in [data/mode1/README.md](data/mode1/README.md).
-- 3D model: "Astronaut" by Javi_DaviYT on Sketchfab, CC BY 4.0 ([notice](frontend/public/licenses/Astronaut-model-NOTICE.txt)).
+- 3D model: ["astronaut" by Antropik](https://sketchfab.com/3d-models/astronaut-482bf87662fd4b378bcb3a2931d59ca3) on Sketchfab, CC BY 4.0 ([notice](frontend/public/licenses/Astronaut-model-NOTICE.txt)).
+- PDF report: [pdf-lib](https://github.com/Hopding/pdf-lib) and @pdf-lib/fontkit, MIT. All other dependencies and their licences are in [NOTICE](NOTICE).
 - Font: Inter, SIL Open Font License 1.1 ([licence](frontend/public/licenses/Inter-OFL.txt)).
 
 **Licence:**

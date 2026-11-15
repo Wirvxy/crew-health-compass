@@ -1,17 +1,21 @@
 Astronaut 3D model
 
-"Astronaut" by Javi_DaviYT on Sketchfab
-https://sketchfab.com/3d-models/astronaut-287589e324b942b8be57dbd6c539b2ab
+"astronaut" by Antropik (@Antropik) on Sketchfab
+https://sketchfab.com/3d-models/astronaut-482bf87662fd4b378bcb3a2931d59ca3
 
 License: Creative Commons Attribution 4.0 (CC BY 4.0)
 https://creativecommons.org/licenses/by/4.0/
+
+The author describes it as their own work, made in Blender with textures
+painted in Adobe Substance Painter (published 30 May 2024).
+
+Our copy came from a re-upload of the same model by Javi_DaviYT
+(https://sketchfab.com/3d-models/astronaut-287589e324b942b8be57dbd6c539b2ab).
+It matches the original's published details: about 19.6k triangles, a
+Blender 4.1 export, and 4K textures with Substance Painter's default names.
 
 Changes made for this app:
 - The four textures used (base colour, normal, roughness, metallic) were
   downscaled from 4096x4096 to 1024x1024 PNG to reduce download size.
 - The displacement texture is not included.
-- The FBX model file (source/astronaut.fbx) is used unmodified.
-
-Provenance note: the Sketchfab page describes the model as "Cool astronaut I
-found!", so the original creator has not been verified. The credit above
-follows the license shown on the Sketchfab page.
+- The FBX model file (astronaut.fbx) is used unmodified.
