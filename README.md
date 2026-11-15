@@ -10,9 +10,9 @@ The app has two clearly separated modes, plus a historical Mission Environment t
 
 | Mode | Data | What you can do |
 |---|---|---|
-| **Mode 1: Mission Health Monitor** | Synthetic ISS history: 4 fictional crew members, 3,000 readings (`iss-synthetic-3000/`) | Enter a daily check-in (heart rate, respiratory rate, blood pressure, optional sleep and mood). The backend compares it with the same astronaut's earlier readings in the same activity context. The 3D astronaut shows the result, and the evidence panel shows the numbers behind it. |
-| **Mode 2: NASA Biological Passport** | Real NASA study OSD-575: blood serum panels of the 4 Inspiration4 crew members (`download/`) | Pick a crew member and a postflight visit, and see each biomarker compared with that person's own preflight average and the supplied laboratory limits, plus trajectories across all visits. |
-| **Mission Environment: Mars Radiation History** | Real NASA Curiosity RAD measurements on the Martian surface: 5,971 dose rates, 7 March–20 May 2024 (`raw data/NASA Curiosity radiation/`) | Explore the radiation timeline (zoom, date range, hover), and the 20 May 2024 solar event compared with the week before. It describes the Mars environment only and never changes a health status. |
+| **Mode 1: Mission Health Monitor** | Synthetic ISS history: 4 fictional crew members, 3,000 readings (`data/mode1/`) | Enter a daily check-in (heart rate, respiratory rate, blood pressure, optional sleep and mood). The backend compares it with the same astronaut's earlier readings in the same activity context. The 3D astronaut shows the result, and the evidence panel shows the numbers behind it. |
+| **Mode 2: NASA Biological Passport** | Real NASA study OSD-575: blood serum panels of the 4 Inspiration4 crew members (`data/mode2/`) | Pick a crew member and a postflight visit, and see each biomarker compared with that person's own preflight average and the supplied laboratory limits, plus trajectories across all visits. |
+| **Mission Environment: Mars Radiation History** | Real NASA Curiosity RAD measurements on the Martian surface: 5,971 dose rates, 7 March–20 May 2024 (`data/radiation/`) | Explore the radiation timeline (zoom, date range, hover), and the 20 May 2024 solar event compared with the week before. It describes the Mars environment only and never changes a health status. |
 
 Mode 1 statuses are **green** (no unusual pattern among the compared readings), **amber** (a statistical difference from personal history) or **grey** (not assessed: unknown, not normal). Red is reserved for an approved medical rule, and none exists yet. No treatment advice is shown.
 
@@ -42,9 +42,10 @@ The API also keeps a **hash-chained audit log** (`GET /audit/verify`). Check-ins
 | Path | Contents | Owner |
 |---|---|---|
 | `engine/` | Analytics: OSD-575 ingestion and analyses (A1–A4), Mode 1 contracts and detection, guides and JSON examples | Iliass Barrou |
-| `iss-synthetic-3000/` | Synthetic ISS dataset for Mode 1 (see its README) | Ayman El Kerboubi |
-| `download/` | NASA OSD-575 files: the source data for Mode 2 (see its README) | Ayman El Kerboubi (*proposal*) |
-| `raw data/NASA Curiosity radiation/` | Curiosity RAD radiation CSV for the Mission Environment tab (see its README) | Ayman El Kerboubi |
+| `data/` | All three datasets, one folder per part of the app (see [data/README.md](data/README.md)) | Ayman El Kerboubi |
+| `data/mode1/` | Synthetic ISS dataset `iss-synthetic-3000` for Mode 1 | Ayman El Kerboubi |
+| `data/mode2/` | NASA OSD-575 files: the source data for Mode 2 | Ayman El Kerboubi |
+| `data/radiation/` | Curiosity RAD radiation CSV for the Mission Environment tab | Ayman El Kerboubi |
 | `frontend/` | React + Vite + TypeScript user interface | Taha Errassif |
 | `api/` | FastAPI app: Mode 1 and Mode 2 endpoints, SQLite audit log, tests | Monssif El Haouari |
 | `docs/` | API guides for the frontend, JSON examples, screenshots, AI-usage log | Monssif El Haouari (*proposal*) |
@@ -90,15 +91,17 @@ cd frontend; npm run build; cd ..
 | [docs/radiation-api.md](docs/radiation-api.md) | Mission Environment radiation endpoints, fields and errors |
 | [engine/README.md](engine/README.md) | Engine overview and the A1–A3 analyses; links to the Mode 1 and A4 guides |
 | [frontend/README.md](frontend/README.md) | Frontend structure, settings and checks |
-| [iss-synthetic-3000/README.md](iss-synthetic-3000/README.md) | How the synthetic dataset was built |
-| [download/README.md](download/README.md) | What the NASA files are and which ones the engine reads |
+| [data/README.md](data/README.md) | Which dataset feeds which part of the app |
+| [data/mode1/README.md](data/mode1/README.md) | How the synthetic dataset was built |
+| [data/mode2/README.md](data/mode2/README.md) | What the NASA files are and which ones the engine reads |
+| [data/radiation/README.md](data/radiation/README.md) | The Curiosity radiation CSV: source, columns and SHA-256 |
 | [docs/AI_USAGE.md](docs/AI_USAGE.md) | Log of every AI-assisted change |
 
 ## Data and provenance
 
 Every record says where it came from: `user` (entered in the app), `simulated`/`synthetic` (generated), or `dataset:OSD-575` (NASA). The UI labels synthetic data **SIMULATED** and names the NASA study on Mode 2 pages.
 
-### NASA OSD-575 (`download/`)
+### NASA OSD-575 (`data/mode2/`)
 
 | What the files state | Evidence in the repository |
 |---|---|
@@ -108,19 +111,19 @@ Every record says where it came from: `user` (entered in the app), `simulated`/`
 | Samples before launch (L-92, L-44, L-3) and after return (R+1, R+45, R+82, R+194) | `timepoint` column of the metabolic panel `_SUBMITTED.csv`; `Factor Value[Time]` in `s_OSD-575.txt` |
 | Blood tests, not daily vitals: a 19-analyte metabolic panel plus immune and cardiac cytokine panels | `ANALYTE` column of the metabolic panel `_SUBMITTED.csv`; `Type` column of the Eve Panel `_SUBMITTED.csv` files |
 
-The metadata files are in `download/OSD-575_metadata_OSD-575-ISA/`.
+The metadata files are in `data/mode2/OSD-575_metadata_OSD-575-ISA/`.
 
 **Not yet checked (for Ayman El Kerboubi):** the OSDR web page itself, the data licence and terms of use, and whether these files exactly match the official download.
 
 **Open question for the team:** the Inspiration4 crew is publicly known, so coded IDs plus recorded sex may not keep individuals anonymous. The team should decide before this data appears in a public demo.
 
-### Synthetic ISS history (`iss-synthetic-3000/`)
+### Synthetic ISS history (`data/mode1/`)
 
-These are fictional crew roles (`commander`, `flight_engineer_1`–`3`) on a simulated 2030 mission calendar. Each file keeps the column format of a historical NASA table (Apollo 10, Apollo–Soyuz, Skylab 4), but every value is generated. The method and sources are in its [README](iss-synthetic-3000/README.md).
+These are fictional crew roles (`commander`, `flight_engineer_1`–`3`) on a simulated 2030 mission calendar. Each file keeps the column format of a historical NASA table (Apollo 10, Apollo–Soyuz, Skylab 4), but every value is generated. The method and sources are in its [README](data/mode1/README.md).
 
-### Curiosity radiation history (`raw data/NASA Curiosity radiation/`)
+### Curiosity radiation history (`data/radiation/`)
 
-These are real NASA measurements: 5,971 absorbed dose **rates** (µGy/day) recorded by the Radiation Assessment Detector on the Curiosity rover, on the Martian surface, from 7 March to 20 May 2024. The period includes NASA's documented solar event on 20 May 2024. They describe the Mars environment, not any astronaut's exposure, and they never feed the health assessment. Details are in its [README](raw%20data/NASA%20Curiosity%20radiation/README.md).
+These are real NASA measurements: 5,971 absorbed dose **rates** (µGy/day) recorded by the Radiation Assessment Detector on the Curiosity rover, on the Martian surface, from 7 March to 20 May 2024. The period includes NASA's documented solar event on 20 May 2024. They describe the Mars environment, not any astronaut's exposure, and they never feed the health assessment. Details are in its [README](data/radiation/README.md).
 
 ## Security and data integrity
 
@@ -179,9 +182,9 @@ We use AI coding assistants: Codex for Iliass Barrou, Ayman El Kerboubi and Taha
 ## Acknowledgements and licences
 
 - NASA Space Apps Challenge 2026 and its challenge resources.
-- NASA Open Science Data Repository, study [OSD-575](https://osdr.nasa.gov/bio/repo/data/studies/OSD-575) (files in `download/`).
-- NASA Curiosity RAD Level 2 data ([MSL_RAD_OBS-L2](https://data.nasa.gov/dataset/mars-science-laboratory-msl-radiation-assessment-detector-rad-level-2-observation-dosimetr)), exported by Ayman El Kerboubi (`raw data/NASA Curiosity radiation/`).
-- The synthetic dataset's historical reference tables are cited in [iss-synthetic-3000/README.md](iss-synthetic-3000/README.md).
+- NASA Open Science Data Repository, study [OSD-575](https://osdr.nasa.gov/bio/repo/data/studies/OSD-575) (files in `data/mode2/`).
+- NASA Curiosity RAD Level 2 data ([MSL_RAD_OBS-L2](https://data.nasa.gov/dataset/mars-science-laboratory-msl-radiation-assessment-detector-rad-level-2-observation-dosimetr)), exported by Ayman El Kerboubi (`data/radiation/`).
+- The synthetic dataset's historical reference tables are cited in [data/mode1/README.md](data/mode1/README.md).
 - 3D model: "Astronaut" by Javi_DaviYT on Sketchfab, CC BY 4.0 ([notice](frontend/public/licenses/Astronaut-model-NOTICE.txt)).
 - Font: Inter, SIL Open Font License 1.1 ([licence](frontend/public/licenses/Inter-OFL.txt)).
 

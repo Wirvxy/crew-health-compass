@@ -63,7 +63,7 @@ _state: RadiationData | Unavailable | None = None
 
 
 def data_path() -> Path:
-    """The RAD CSV (default: the repository's raw data/NASA Curiosity radiation/)."""
+    """The RAD CSV (default: the repository's data/radiation/)."""
     value = os.environ.get(DATA_ENV_VAR)
     return Path(value) if value else DEFAULT_CSV_PATH
 
@@ -82,7 +82,7 @@ def load_history() -> None:
         logger.error("Radiation CSV missing: %s", error)
         _state = Unavailable(
             "Radiation history not found. Put the Curiosity RAD CSV in the repository's "
-            f"'raw data/NASA Curiosity radiation/' folder or set {DATA_ENV_VAR}, "
+            f"'data/radiation/' folder or set {DATA_ENV_VAR}, "
             "then restart the server."
         )
     except (OSError, ValueError):  # ValueError also covers bad encoding and bad rows

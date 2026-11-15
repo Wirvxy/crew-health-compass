@@ -13,7 +13,7 @@ from zipfile import ZipFile
 
 from engine.nasa_ingestion import MeasurementStatus
 
-DEFAULT_DATA_PATH = Path(__file__).resolve().parents[1] / "iss-synthetic-3000"
+DEFAULT_DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "mode1"
 
 # Each column retains its statistic and gas-volume convention in its name or unit.
 _FORMATS = {

@@ -9,7 +9,7 @@ from typing import Literal
 
 STUDY_ID = "OSD-575"
 STUDY_URL = "https://osdr.nasa.gov/bio/repo/data/studies/OSD-575"
-DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / "download"
+DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "mode2"
 
 Phase = Literal["preflight", "postflight"]
 Panel = Literal["cmp", "eve_cardiovascular", "eve_immune", "alamar_immune"]

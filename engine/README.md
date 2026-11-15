@@ -19,7 +19,7 @@ The Phase A1 loader reads four transformed serum CSVs from [NASA OSD-575](https:
 
 ## Data setup
 
-Place these files directly in the repository's `download/` directory using their original names. If the checkout already contains them, use those copies.
+Place these files directly in the repository's `data/mode2/` directory using their original names. If the checkout already contains them, use those copies.
 
 - `LSDS-8_Comprehensive_Metabolic_Panel_CMP_TRANSFORMED.csv`
 - `LSDS-8_Multiplex_serum_cardiovascular_EvePanel_TRANSFORMED.csv`
@@ -36,7 +36,7 @@ From the repository root, run a quick check with:
 python -c "from engine.nasa_ingestion import load_osd575; print(len(load_osd575()))"
 ```
 
-In Python, `load_osd575()` defaults to the repository's `download/` regardless of your working directory. Pass a string or `Path` as `data_dir` to read from another directory. To load just one panel, call `load_osd575_panel(data_dir, panel)` with `cmp`, `eve_cardiovascular`, `eve_immune`, or `alamar_immune`.
+In Python, `load_osd575()` defaults to the repository's `data/mode2/` regardless of your working directory. Pass a string or `Path` as `data_dir` to read from another directory. To load just one panel, call `load_osd575_panel(data_dir, panel)` with `cmp`, `eve_cardiovascular`, `eve_immune`, or `alamar_immune`.
 
 ```python
 import json

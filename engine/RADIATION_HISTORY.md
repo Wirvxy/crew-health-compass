@@ -4,7 +4,7 @@ R1 serves historical measurements from Curiosity's Radiation Assessment Detector
 
 ## Data and provenance
 
-The default path is `raw data/NASA Curiosity radiation/nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv` from the repository root. The CSV is committed at that path, exported by Person B, and kept byte-for-byte by `.gitattributes`, so its SHA-256 is `d514a88fdc9a539a3b470b57a4d28c95cec6b1494474c696a27d629cda1cdea5` on every checkout. Pass a local file path explicitly to read a different export.
+The default path is `data/radiation/nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv` from the repository root. The CSV is committed at that path, exported by Person B, and kept byte-for-byte by `.gitattributes`, so its SHA-256 is `d514a88fdc9a539a3b470b57a4d28c95cec6b1494474c696a27d629cda1cdea5` on every checkout. Pass a local file path explicitly to read a different export.
 
 The four columns are `timestamp_utc`, `absorbed_dose_rate_ugy_per_day`, `detector`, and `nasa_cdf_url`. The export has 5,971 valid detector E readings and no duplicate detector/timestamp pairs. The range is 2024-03-07 00:14:58 to 2024-05-20 23:56:36 UTC, with readings on all 75 UTC dates. The most frequent interval is 17 min 6 sec, with intervals varying from 7 min 49 sec to 20 h 39 min 16 sec. There are 75 distinct CDF URLs. The original CDF variable name, quality flags, detector live time, and uncertainties are absent from this export, so quality-filter status cannot be confirmed from the CSV.
 

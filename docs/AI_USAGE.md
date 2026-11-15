@@ -491,3 +491,24 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
     - Mode 2 passport 302, glucose 90, +12.67, within.
   - The frontend was installed with `npm ci` and built. All four tabs worked in the browser on real data, with 22 requests, all local, and no console errors.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · One data/ folder for the three datasets
+
+- **Change:** the three dataset folders now sit in one top-level `data/` folder, with one subfolder per part of the app:
+  - `iss-synthetic-3000/` → `data/mode1/` (synthetic history, Mode 1);
+  - `download/` → `data/mode2/` (NASA OSD-575, Mode 2);
+  - `raw data/NASA Curiosity radiation/` → `data/radiation/` (Mission Environment).
+- **Approval:** D's request. D confirmed that Ayman El Kerboubi (B, data owner) and Iliass Barrou (A, engine owner) agreed. D's first message mapped the two Mode folders the other way round; D chose the mapping that matches what the code reads.
+- **Files:**
+  - every data file is a pure Git rename, with no content change; the radiation CSV keeps SHA-256 `d514a88f…`;
+  - the three default paths in `engine/` (one line each);
+  - the API's docstrings and 503 messages;
+  - `.gitattributes`, `.env.example`, the READMEs, `NOTICE`, the guides, and `AGENTS.md`/`CLAUDE.md` (B owns `data/`; the `download/` proposal is settled);
+  - new `data/README.md`, which says which dataset feeds which part of the app.
+- **Not changed:** the dataset name `iss-synthetic-3000` (still used for B's ZIP and the M3 dataset version), the environment variable names, and older entries in this log, which describe paths as they were then.
+- **Checks (local, Windows):**
+  - Engine: 78 tests, OK, the same 5 skipped (optional scikit-learn) as before the move, with identical per-test results.
+  - API: 126 passed, as before.
+  - `npm run build` passes.
+  - No tracked file still names an old path, except older log entries and the dataset name; all 59 relative links in the 19 Markdown files resolve.
+- **Human review:** None yet.

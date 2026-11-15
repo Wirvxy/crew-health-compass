@@ -13,6 +13,6 @@ Source data for **Mode 2 (NASA Biological Passport)**: blood serum measurements 
 | `*_SUBMITTED.csv`, `*_SUBMITTED.xlsx` | The same panels as originally submitted to NASA | No: kept as source references |
 | `OSD-575_metadata_OSD-575-ISA/` | Study metadata (ISA-Tab): investigation, study and assay descriptions | No: provenance only |
 
-What these files state about the study, and what is still unverified, is in the [root README](../README.md#data-and-provenance).
+What these files state about the study, and what is still unverified, is in the [root README](../../README.md#data-and-provenance).
 
-**Owner:** Ayman El Kerboubi (B, *proposal*: see `AGENTS.md`). The unzipped metadata folder replaces the identical `.zip` that used to sit beside it.
+**Owner:** Ayman El Kerboubi (B). The unzipped metadata folder replaces the identical `.zip` that used to sit beside it.

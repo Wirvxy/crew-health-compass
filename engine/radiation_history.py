@@ -20,7 +20,7 @@ DATASET_URL = (
 EVENT_URL = "https://science.nasa.gov/resource/curiosity-sees-streaks-and-specks-during-2024-solar-storm/"
 EVENT_DATE = date(2024, 5, 20)
 DEFAULT_CSV_PATH = (
-    Path(__file__).resolve().parents[1] / "raw data" / "NASA Curiosity radiation"
+    Path(__file__).resolve().parents[1] / "data" / "radiation"
     / "nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv"
 )
 _RATE = "absorbed_dose_rate_ugy_per_day"
