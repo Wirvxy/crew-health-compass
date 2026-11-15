@@ -5,10 +5,10 @@ import type { HealthSignal } from './astronautHealth'
 import type { CSSProperties } from 'react'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 
-// "Astronaut" by Javi_DaviYT on Sketchfab, CC BY 4.0 (see public/licenses/Astronaut-model-NOTICE.txt).
+// "astronaut" by Antropik on Sketchfab, CC BY 4.0 (see public/licenses/Astronaut-model-NOTICE.txt).
 // The FBX and its textures are served by this app, so nothing is fetched from Sketchfab at runtime.
 const MODEL_URL = `${import.meta.env.BASE_URL}models/astronaut/astronaut.fbx`
-const MODEL_SOURCE = 'https://sketchfab.com/3d-models/astronaut-287589e324b942b8be57dbd6c539b2ab'
+const MODEL_SOURCE = 'https://sketchfab.com/3d-models/astronaut-482bf87662fd4b378bcb3a2931d59ca3'
 const LICENSE_URL = 'https://creativecommons.org/licenses/by/4.0/'
 const FIT_HEIGHT = 2.6
 
@@ -134,5 +134,5 @@ export default function Astronaut3D({ signals, selected, onSelect }: { signals: 
         </div>)}
       </div></div>
     <div className="astronaut-toolbar"><span>Drag to rotate · Arrow keys supported</span><button aria-label="Zoom out" disabled={zoom <= .8} onClick={() => setZoom(z => Math.max(.8, z - .1))}>−</button><button aria-label="Zoom in" disabled={zoom >= 1.3} onClick={() => setZoom(z => Math.min(1.3, z + .1))}>+</button><button onClick={() => { setAngle(-.3); setPitch(0); setZoom(1) }}>Reset</button></div>
-    <p className="astronaut-credit" style={{ fontSize: 11, textAlign: 'center', margin: '0 0 12px', color: '#c4d6e1' }}>Model: <a href={MODEL_SOURCE} target="_blank" rel="noopener noreferrer">“Astronaut” by Javi_DaviYT</a> (Sketchfab), <a href={LICENSE_URL} target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p></>
+    <p className="astronaut-credit" style={{ fontSize: 11, textAlign: 'center', margin: '0 0 12px', color: '#c4d6e1' }}>Model: <a href={MODEL_SOURCE} target="_blank" rel="noopener noreferrer">“astronaut” by Antropik</a> (Sketchfab), <a href={LICENSE_URL} target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p></>
 }

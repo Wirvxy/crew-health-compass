@@ -49,7 +49,6 @@ This runs the "Plan for today" day-rule tests in `tests/` with Node's built-in t
 | `src/types/` | View-model and dataset types |
 | `src/assets/fonts/` | Inter font files |
 | `src/assets/brand/` | The logo, unchanged from the original PNG (see `NOTICE`) |
-| `src/assets/profiles/` | One photo per crew profile, named by profile ID (`ProfilePhoto` shows it on the start page, the sidebar and the top bar). Source and licence not yet documented: see `NOTICE` |
 | `tests/` | Tests for the "Plan for today" rules (`npm test`) |
 | `public/models/astronaut/` | 3D model and textures |
 | `public/licenses/` | Licence notices for the 3D model and the font |
