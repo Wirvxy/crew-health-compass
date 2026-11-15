@@ -63,8 +63,10 @@ ASSETS BUNDLED WITH THE FRONTEND
 
 SOFTWARE DEPENDENCIES (installed by npm and pip; not stored in this repository)
 
-- Frontend: React and React DOM (MIT), three.js (MIT), Vite and
-  @vitejs/plugin-react (MIT), TypeScript (Apache-2.0).
+- Frontend: React and React DOM (MIT), three.js (MIT), pdf-lib and
+  @pdf-lib/fontkit (MIT; they bring pako, MIT and Zlib, and tslib, 0BSD) for
+  the PDF report, Vite and @vitejs/plugin-react (MIT), TypeScript
+  (Apache-2.0).
 - Backend: FastAPI (MIT), Uvicorn (BSD-3-Clause), Starlette (BSD-3-Clause),
   Pydantic (MIT). Tests: pytest (MIT), HTTPX (BSD-3-Clause).
 - Exact versions: frontend/package-lock.json, api/requirements.txt and
