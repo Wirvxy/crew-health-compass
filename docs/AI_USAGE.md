@@ -448,3 +448,29 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
   - Engine: 78 run, OK, 5 skipped (M3 needs scikit-learn). Iliass's real-data radiation test ran.
   - Values match the brief: May 20 peak 8377.913 µGy/day at 06:15:19 UTC, median 1153.6759, May 13–19 median 148.34653, ratio 7.7768.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Mission Environment tab (Mars Radiation History)
+
+- **Task:** the frontend R1 brief: add a third, separate area for the Mars radiation history in the existing theme and navigation, connected to the radiation API (#26). Mode 1 and Mode 2 are not changed. Monssif El Haouari reported permission from the whole team, including Taha Errassif for `frontend/`.
+- **Branch:** `d-radiation-tab`, from `main` after #26.
+- **Files:**
+  - New: `frontend/src/pages/RadiationHistory.tsx`, `components/RadiationChart.tsx`, `services/radiation.ts`.
+  - Edited: `App.tsx`, `components/Sidebar.tsx` (fourth item and icon), `components/PageHeader.tsx` (each page's badge text), `index.css`.
+  - Docs: README, frontend README, two screenshots.
+  - No new dependency.
+- **Chart (SVG):**
+  - Detector E readings from the API on a UTC time axis, in µGy/day labelled as a rate.
+  - Line breaks and shaded bands where readings are more than 3 hours apart; nothing is interpolated.
+  - The May 20 band, the API's peak marker, and an "export ends" marker so the event does not look finished.
+  - Hover tooltips with time, value and unit; drag to zoom with Reset; date-range presets taken from the event response, plus custom dates sent to the API; an optional log scale.
+  - The event card reads every number from the event endpoint.
+- **Checks (local, Windows; dev server proxied to the API):**
+  - 5,971 readings, 10 gaps, May 20 band, peak and end marker drawn.
+  - The event card shows 8,377.913 µGy/day at 06:15:19 UTC, median 1,153.6759, May 13–19 median 148.34653, 7.78×.
+  - The event-week preset requests the dates from the API (718 readings).
+  - Hover, drag-zoom and log scale work.
+  - A start after the end shows the API's 422 inside the tab; a simulated 503 shows an unavailable state while Mode 1 keeps working, and Retry recovers.
+  - Mode 1 (unusual example, chest marker) and Mode 2 (C002 R+45 passport, 302 biomarkers) are unchanged.
+  - All 70 requests local; no horizontal overflow at 375 px.
+  - `npm run build` passes.
+- **Human review:** None yet.

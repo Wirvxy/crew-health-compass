@@ -162,3 +162,25 @@ body::after{content:'';position:fixed;width:110vw;height:80vh;left:4vw;top:70vh;
 .checkin-panel .status.normal{--status:#1d6b55}.checkin-panel .status.watch{--status:#8a5a12}.checkin-panel .status.unavailable{--status:#425e6f}.checkin-panel .status.action{--status:#9f2b45}
 .detail-panel details.info-section summary{cursor:pointer}.detail-panel .data-table th{color:#d1e1eb}
 .nasa-page td button{white-space:nowrap;min-height:36px;padding:6px 14px}.nasa-page td:nth-child(2){white-space:nowrap}
+/* Mission Environment (Mars radiation history): page accent and the SVG timeline. */
+[data-page=environment]{--accent:#f5a97f;--accent-rgb:245,169,127}
+.rad-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px;margin:4px 0 18px}
+.rad-presets{display:flex;flex-wrap:wrap;gap:8px}.rad-presets button[aria-pressed=true]{background:#e4eff2;color:#213d4c;border-color:#e4eff2}
+.rad-range{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px}.rad-range label{display:grid;gap:4px;font-size:11px;color:var(--secondary)}
+.rad-range input{min-height:44px;border:1px solid #93aab9;border-radius:30px;background:rgba(219,235,244,.07);color:var(--text);padding:8px 14px;color-scheme:dark}
+.rad-log{display:flex;align-items:center;gap:8px;font-size:12px;min-height:44px}.rad-log input{width:18px;height:18px;accent-color:var(--accent)}
+.rad-chart{position:relative}.rad-chart svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.rad-grid line{stroke:rgba(219,235,244,.14)}.rad-grid text,.rad-axis{fill:#c3d5df;font:11px Consolas,monospace}
+.rad-line{fill:none;stroke:#edf7fb;stroke-width:1.4;stroke-linejoin:round}
+.rad-gap{fill:rgba(219,235,244,.06)}.rad-event{fill:rgba(var(--accent-rgb),.16)}.rad-event-label{fill:var(--accent);font:600 11px Inter,sans-serif}
+.rad-peak{fill:none;stroke:var(--accent);stroke-width:2.2}.rad-hover{fill:#edf7fb;stroke:#0e1a24;stroke-width:1.5}
+.rad-select{fill:rgba(var(--accent-rgb),.18);stroke:var(--accent);stroke-dasharray:4 3}
+.rad-end line{stroke:#c3d5df;stroke-dasharray:5 4}.rad-end text{fill:#c3d5df;font:10px Consolas,monospace}
+.rad-overlay{fill:transparent;cursor:crosshair}
+.rad-tooltip{position:absolute;top:8px;transform:translateX(-50%);display:grid;gap:2px;padding:8px 12px;border-radius:14px;background:rgba(14,26,36,.92);border:1px solid rgba(var(--accent-rgb),.6);font-size:12px;pointer-events:none;white-space:nowrap}
+.rad-tooltip span{font-size:11px;color:var(--secondary)}
+.rad-chart-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--secondary);margin-top:6px}
+.rad-legend{display:flex;flex-wrap:wrap;gap:6px 18px;list-style:none;padding:0;margin:14px 0 0;font-size:11px;color:var(--secondary)}
+.rad-legend span{display:inline-block;width:16px;height:10px;margin-right:6px;vertical-align:middle;border-radius:2px}
+.rad-legend .key-line{height:0;border-top:2px solid #edf7fb;border-radius:0}.rad-legend .key-band{background:rgba(var(--accent-rgb),.35)}.rad-legend .key-gap{background:rgba(219,235,244,.18)}.rad-legend .key-end{height:0;border-top:2px dashed #c3d5df;border-radius:0}
+@media(max-width:600px){.rad-controls{flex-direction:column;align-items:stretch}.rad-range{flex-wrap:wrap}}
