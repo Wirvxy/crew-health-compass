@@ -35,9 +35,10 @@ This checks TypeScript and builds the app into `dist/`. ESLint is not configured
 |---|---|
 | `src/App.tsx` | App shell: sidebar, shared page heading and the three pages |
 | `src/pages/Dashboard.tsx` | Mode 1 state: check-in drafts, results, examples, Mars-ready link simulation |
+| `src/pages/RadiationHistory.tsx` | Mission Environment page: date range, radiation timeline, May 20 event card, limitations |
 | `src/pages/NasaDataset.tsx` | Mode 2 page: crew, panel, biomarker and visit selection, history chart, trajectories |
-| `src/components/` | `DailyCheckIn`, `BodyMap` and `Astronaut3D` (three.js viewer with the body marker), `MonitoringDetail` (evidence panel), `PassportSummary` (A4), `Sidebar`, `PageHeader`, `TopBar`, `DataNotes`, `StatusLabel` |
-| `src/services/` | `api.ts` (base URL), `monitoring.ts` (Mode 1 requests), `dataset.ts` and `datasetResponse.ts` (Mode 2 requests and shape checks), `report.ts` (local PDF export) |
+| `src/components/` | `DailyCheckIn`, `BodyMap` and `Astronaut3D` (three.js viewer with the body marker), `MonitoringDetail` (evidence panel), `PassportSummary` (A4), `RadiationChart` (SVG timeline with gaps, event band, hover and drag-to-zoom), `Sidebar`, `PageHeader`, `TopBar`, `DataNotes`, `StatusLabel` |
+| `src/services/` | `api.ts` (base URL), `monitoring.ts` (Mode 1 requests), `dataset.ts` and `datasetResponse.ts` (Mode 2 requests and shape checks), `radiation.ts` (Mission Environment requests), `report.ts` (local PDF export) |
 | `src/types/` | View-model and dataset types |
 | `src/assets/fonts/` | Inter font files |
 | `public/models/astronaut/` | 3D model and textures |
@@ -52,4 +53,7 @@ This checks TypeScript and builds the app into `dist/`. ESLint is not configured
 - **Mode 2** (NASA lab data):
   - All values come from the `/datasets/osd575/...` endpoints. The page keeps decimal strings and nulls, converts numbers only for display, and shows gaps for missing readings.
   - The A4 passport labels "laboratory comparison unavailable" separately from missing readings.
+- **Mission Environment** (Mars Radiation History):
+  - The chart draws the API's readings as they are: no interpolation. The line breaks where readings are more than 3 hours apart, and a dashed line marks where the export ends.
+  - The event card reads every number from `/api/environment/radiation/events/may-20-2024`. The tab never affects a health status.
 - **Errors:** API failures show a message, never fallback data, and a page that cannot load offers Retry. Results stay in memory until the page is reloaded.

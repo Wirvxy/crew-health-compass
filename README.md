@@ -6,12 +6,13 @@ An offline-first health-monitoring prototype for astronauts on long missions, bu
 
 ## What it does
 
-The app has two clearly separated modes.
+The app has two clearly separated modes, plus a historical Mission Environment tab.
 
 | Mode | Data | What you can do |
 |---|---|---|
 | **Mode 1: Mission Health Monitor** | Synthetic ISS history: 4 fictional crew members, 3,000 readings (`iss-synthetic-3000/`) | Enter a daily check-in (heart rate, respiratory rate, blood pressure, optional sleep and mood). The backend compares it with the same astronaut's earlier readings in the same activity context. The 3D astronaut shows the result, and the evidence panel shows the numbers behind it. |
 | **Mode 2: NASA Biological Passport** | Real NASA study OSD-575: blood serum panels of the 4 Inspiration4 crew members (`download/`) | Pick a crew member and a postflight visit, and see each biomarker compared with that person's own preflight average and the supplied laboratory limits, plus trajectories across all visits. |
+| **Mission Environment: Mars Radiation History** | Real NASA Curiosity RAD measurements on the Martian surface: 5,971 dose rates, 7 March–20 May 2024 (`raw data/NASA Curiosity radiation/`) | Explore the radiation timeline (zoom, date range, hover), and the 20 May 2024 solar event compared with the week before. It describes the Mars environment only and never changes a health status. |
 
 Mode 1 statuses are **green** (no unusual pattern among the compared readings), **amber** (a statistical difference from personal history) or **grey** (not assessed: unknown, not normal). Red is reserved for an approved medical rule, and none exists yet. No treatment advice is shown.
 
