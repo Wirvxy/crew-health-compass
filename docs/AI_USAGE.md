@@ -474,3 +474,20 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
   - All 70 requests local; no horizontal overflow at 375 px.
   - `npm run build` passes.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Final cleanup and full check after R1
+
+- **Branches:** after #26 and #27 merged, `engine-main` had no commit missing from `main`; its tip `56875db` is part of `main`. It was deleted, leaving `main` as the only branch, and the PR branches were removed automatically.
+- **Docs:** `engine/RADIATION_HISTORY.md` corrected two stale facts: the CSV is committed (no longer only on the deleted `data` branch), and the real routes replace the proposed ones.
+- **Audit of `main`:**
+  - The only duplicate files are `AGENTS.md`/`CLAUDE.md` (intentional).
+  - No tracked file matches the ignore rules.
+  - All 18 Markdown files have 0 broken relative links.
+- **Fresh-clone check:**
+  - `main` (`ad53f71`) was cloned from GitHub; its CSV hash was `d514a88f…`.
+  - The API was started with outbound networking disabled (loopback only). All three datasets loaded, and every mode answered:
+    - radiation 5,971 readings, peak 8377.913 at 06:15:19;
+    - Mode 1 unusual, chest;
+    - Mode 2 passport 302, glucose 90, +12.67, within.
+  - The frontend was installed with `npm ci` and built. All four tabs worked in the browser on real data, with 22 requests, all local, and no console errors.
+- **Human review:** None yet.
