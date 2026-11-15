@@ -298,6 +298,14 @@ select option:disabled{color:#a5b9c5}
 .picker-card[data-tone=peach]{--tone:#f5a97f;--tone-rgb:245,169,127}
 .picker-card{width:100%;min-height:0;display:flex;flex-direction:column;align-items:center;gap:12px;padding:0;border:0;border-radius:22px;background:none;color:var(--text);cursor:pointer}
 .picker-avatar{position:relative;width:100%;aspect-ratio:1;display:grid;place-items:center;border:2px solid rgba(var(--tone-rgb),.28);border-radius:22px;background:radial-gradient(circle at 50% 35%,rgba(var(--tone-rgb),.32),transparent 62%),linear-gradient(160deg,#20394a,#13232f);transition:transform .2s,border-color .2s,box-shadow .2s}
+/* Crew profile photos: cropped to the card (square) or the chip (circle); the code badge stays readable on top. */
+.picker-avatar{overflow:hidden}
+.picker-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .3s,filter .3s;filter:saturate(.9) brightness(.92)}
+.picker-card:hover .picker-photo,.picker-card:focus-visible .picker-photo{transform:scale(1.04);filter:none}
+.picker-avatar:has(.picker-photo)::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(9,20,28,.75));pointer-events:none}
+.picker-code{z-index:1;padding:2px 6px;border-radius:6px;background:rgba(9,20,28,.6)}
+.profile-chip,.crew-control .avatar{overflow:hidden}
+.chip-photo{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .picker-helmet{width:54%;height:54%;fill:none;stroke:var(--tone);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .picker-code{position:absolute;right:12px;bottom:10px;font:600 11px Consolas,monospace;letter-spacing:1px;color:var(--tone)}
 .picker-name{font-size:14px;font-weight:600;color:var(--secondary);transition:color .2s}

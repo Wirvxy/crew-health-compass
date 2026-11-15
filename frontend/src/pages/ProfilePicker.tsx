@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Brand from '../components/Brand'
+import ProfilePhoto, { hasProfilePhoto } from '../components/ProfilePhoto'
 import { listProfiles, openProfile, profileCode } from '../services/session'
 import type { Profile } from '../services/session'
 
@@ -40,7 +41,7 @@ export default function ProfilePicker({ notice, busy, onOpen }: { notice: string
         : !profiles ? <p className="picker-lead" role="status">Loading crew profiles…</p>
         : <ul className="picker-grid" aria-label="Crew profiles">{profiles.map((p, i) => <li key={p.astronaut_id}>
             <button type="button" className="picker-card" data-profile={p.astronaut_id} data-tone={TONES[i % TONES.length]} disabled={busy || opening !== null} aria-busy={opening === p.astronaut_id} aria-label={`Open ${p.name}’s workspace`} aria-describedby="picker-note" onClick={() => choose(p)}>
-              <span className="picker-avatar"><Helmet /><span className="picker-code">{profileCode(p.astronaut_id)}</span></span>
+              <span className="picker-avatar">{hasProfilePhoto(p.astronaut_id) ? <ProfilePhoto id={p.astronaut_id} className="picker-photo" /> : <Helmet />}<span className="picker-code">{profileCode(p.astronaut_id)}</span></span>
               <span className="picker-name">{p.name}</span>
               <span className="picker-state" aria-live="polite">{opening === p.astronaut_id ? 'Opening…' : ''}</span>
             </button>
