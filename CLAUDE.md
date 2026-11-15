@@ -14,10 +14,12 @@ Items marked ***Proposal*** were suggested by D and the team has not agreed to t
 
 | Member | Role | Owns | Usual agent |
 |---|---|---|---|
-| A | Tech lead, analytics engine | `engine/`, `contracts/` | Codex |
-| B | Data, health science, evaluation | `data/`, `catalogue/`, `eval/` | Codex |
+| A | Tech lead, analytics engine | `engine/` | Codex |
+| B | Data, health science, evaluation | `iss-synthetic-3000/` | Codex |
 | C | Frontend and UX | `frontend/` | Codex |
-| D | Backend, security, data integrity, release | `api/`, `security/`, CI, deployment | Claude Code |
+| D | Backend, security, data integrity, release | `api/`, `.github/` (CI), deployment | Claude Code |
+
+The roadmap also planned `contracts/` (A), `catalogue/`, `data/` and `eval/` (B), and `security/` (D). They do not exist yet; their owners create them when needed.
 
 ***Proposal:*** ownership not yet covered by the plan:
 
@@ -43,47 +45,47 @@ If a task needs a change in another member's files, do not make it. Write down t
 8. Take every health limit, rule and piece of guidance from `catalogue/indicators.yaml`, with a cited source. Never invent a medical threshold. If a source is missing, mark the rule as unresolved and tell your human.
 9. Use honest wording in code, UI text and docs: "demo access control", "simulated data", "tested on our local prototype". Never write "secure", "compliant", "clinically validated", "production-ready" or "diagnosis".
 10. Write code your human can explain. Nobody merges code they cannot explain.
-11. Do not invent any item marked **TBD** in section 4. Ask your human.
+11. Do not invent any item listed as **still open** in section 4. Ask your human.
 12. ***Proposal:*** never weaken, skip or mock out a validation, role check or integrity check to make code run or a test pass. Report the problem instead.
 
 ## 3. How to run a task
 
 Every task prompt should state: the goal, the allowed files, the files to read first, the acceptance tests, what is out of scope, and "return a PR under ~300 lines with a summary".
 
-**Before you code,** read this file, then `contracts/` and `catalogue/indicators.yaml` once they exist.
+**Before you code,** read this file, then the guides for the area you touch: `engine/README.md` and the other `engine/*.md` guides, `api/README.md`, `docs/mode1-api.md`, `docs/osd575-api.md` and `frontend/README.md`.
 
 **Before you open a PR:**
 
 1. Rebase your branch onto the latest `origin/main`.
-2. Run the checks for the code you touched. For Python, that means ruff and pytest. For the frontend, that means ESLint and the production build. Exact commands will be added here when CI is in place.
+2. Run the checks for the code you touched (CI runs the same ones on every PR into `main`):
+   - Engine, from the repository root: `python -m unittest discover -s engine`
+   - Backend, from `api/`: `.venv\Scripts\python.exe -m pytest`
+   - Frontend, from `frontend/`: `npm run build`
+
+   ruff and ESLint are not configured yet.
 3. Add one line to `docs/AI_USAGE.md` with the tool, task, files and human reviewer.
 
-## 4. Shared interfaces (frozen at G1, H2)
+## 4. Shared interfaces
 
-A owns these interfaces. Until G1, treat them as a draft.
+A owns the engine contracts and D owns the API. Change them only through a PR labelled `contract-change` and approved by A. This section lists what is built today.
 
-- **Models** (in `contracts/`):
-  - `Measurement {astronaut_id, indicator, value, unit, timestamp, provenance}`
-  - `Flag {indicator, level, reason, rule_id, source_url, action, escalation}`
-  - `SystemStatus {system, level, flags}`
-- **Engine entry point:** `assess(measurements, history, catalogue)` returns statuses and flags.
-- **Endpoints:**
-  - `POST /measurements`: accept and validate a check-in
-  - `GET /astronauts/{id}/status`: current system statuses and flags
-  - `GET /astronauts/{id}/history?indicator=`: data for trend charts
-  - `GET /catalogue`: units, measurement instructions, sources
-  - `POST /demo/scenario`: load a labelled simulated scenario (demo mode only)
-  - Added as scheduled: `POST /reports`, `POST /reports/verify`, `GET /audit/verify`
-- **Body systems:** cardiovascular, sleep/behavioural, metabolic, thermal.
-- **Levels:** green, amber, red.
-- **`provenance` values:** `user`, `simulated`, `dataset:<name>`.
+- **Mode 1, Mission Health Monitor** (synthetic history):
+  - Engine: `validate_manual_check_in()` and `validate_assessment()` in `engine/mode1_contracts.py`, and `assess_check_in()` (M2 statistics) in `engine/mode1_detection.py`. Guides: `engine/MODE1_CONTRACT.md` and `engine/MODE1_DETECTION.md`. The M3 model (`engine/mode1_ml.py`) is an offline experiment and is off in the API.
+  - API: `GET /api/monitoring/astronauts` and `POST /api/monitoring/assess`. Guide: `docs/mode1-api.md`.
+  - Statuses: `normal`, `unusual`, `insufficient_data` and `rule_supported_warning`, shown green, amber and grey. Red is reserved for an approved rule.
+  - Body systems and markers: cardiovascular → chest, respiratory → lungs, wellbeing → head.
+- **Mode 2, NASA Biological Passport** (real NASA OSD-575 data):
+  - Engine: `engine/nasa_ingestion.py` (A1), `biomarker_analysis.py` (A2), `trajectory_analysis.py` (A3) and `biological_passport.py` (A4). Guides: `engine/README.md` and `engine/BIOLOGICAL_PASSPORT.md`.
+  - API: read-only `GET /datasets/osd575/...` endpoints, including `/astronauts/{crew_id}/passport?visit=`. Guide: `docs/osd575-api.md`.
+- **Audit:** `GET /audit/verify` checks the hash chain. Its response shape is provisional.
+- **Errors:** `{"detail": "<message>"}` with 422 for invalid input, 404 for an unknown crew or visit, and 503 when a dataset is not loaded.
+- **`provenance` values:** `user`, `simulated`, `dataset:<name>`. Mode 1 calls the field `data_origin`: `user` for check-ins and `synthetic` for its history.
 - **Demo access control (Planned):** every request carries a fixed demo token for one of two roles, astronaut or flight surgeon. The server uses the token for basic authentication (identifying the caller through the token) and authorization (checking what that caller may access). Always call this "demo access control". It is not production-ready account management. A token that is shared or publicly exposed does not establish a private user identity.
-- **TBD at G1:**
-  - the six indicators and the allowed units for each
+- **Still open:**
+  - how a check-in filled with example values is marked as simulated (the Mode 1 contract accepts only `data_origin: "user"`)
+  - storing check-ins, and adding them to the audit hash chain
   - the name of the role-token header, the demo token values, and which astronaut each astronaut token belongs to
-  - the error format for refused values (HTTP 422 and the "data problem" result)
-  - where plausibility checks live, and how the engine receives a "data problem" result
-  - final confirmation of the folder layout
+  - plausibility checks and the "data problem" result
 
 ## 5. Branches, reviews and merging
 
@@ -91,6 +93,7 @@ A owns these interfaces. Until G1, treat them as a draft.
 - Every two hours there is a DONE / NEXT / BLOCKED check-in. At each one, the team reviews PRs and runs CI and the end-to-end smoke test. A approves contract changes, and D merges approved PRs.
 - A second human must review every change to the API, contracts or security code. ***Proposal:*** the same applies to CI files, `AGENTS.md`/`CLAUDE.md`, and dependency lists.
 - Nobody merges unreviewed code during sleep shifts.
+- ***Proposal:*** delete a branch once its PR is merged. GitHub can restore it from the PR page. Long-lived branches (`main`, `engine-main`) stay.
 - Feature freeze is at H34: after that, only fixes. Code freeze is at H40: after that, only repairs to broken links or the deployment.
 
 ## 6. Security basics for all code (*Proposal*)
@@ -105,7 +108,7 @@ A owns these interfaces. Until G1, treat them as a draft.
 
 ### A: tech lead, analytics
 
-- Hand off the JSON schemas and fixtures at H2, and `assess(measurements, history, catalogue)`.
+- Hand off each engine function with a guide and JSON examples, as for Mode 1 and A1–A4 (see section 4).
 - A approves contract changes and announces integration windows.
 
 ### B: data, health science, evaluation

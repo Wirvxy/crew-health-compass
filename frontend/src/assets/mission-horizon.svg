@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-<defs><radialGradient id="planet" cx="43%" cy="8%" r="85%"><stop stop-color="#8ba9b9"/><stop offset=".2" stop-color="#45677e"/><stop offset=".6" stop-color="#203e52"/><stop offset="1" stop-color="#0d2537"/></radialGradient><linearGradient id="horizon" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d8eaf4" stop-opacity=".6"/><stop offset="1" stop-color="#a8cfdf" stop-opacity="0"/></linearGradient><filter id="cloudSoft"><feGaussianBlur stdDeviation="7"/></filter><filter id="atmosphere"><feGaussianBlur stdDeviation="12"/></filter><clipPath id="planetClip"><ellipse cx="590" cy="530" rx="650" ry="370"/></clipPath></defs>
-<ellipse cx="590" cy="528" rx="658" ry="380" fill="none" stroke="#c4e3f0" stroke-width="11" opacity=".15" filter="url(#atmosphere)"/>
-<ellipse cx="590" cy="530" rx="650" ry="370" fill="url(#planet)"/>
-<g clip-path="url(#planetClip)" opacity=".28" filter="url(#cloudSoft)" fill="none" stroke="#d3e3ea" stroke-linecap="round"><path d="M-40 250c133-60 148-25 272-47s132 12 220-1 196-51 354-19" stroke-width="14"/><path d="M31 315c146-52 221-35 341-55s193-25 315-13" stroke-width="24"/><path d="M189 379c118-48 166-30 252-52s213-38 379-27" stroke-width="18"/><path d="M-60 373c147-63 189-38 288-57" stroke-width="10"/><path d="M416 436c111-43 249-72 384-67" stroke-width="28"/></g>
-<ellipse cx="590" cy="530" rx="650" ry="370" fill="none" stroke="#c3dfe9" stroke-width="2" opacity=".48"/>
-<path d="M-50 500V425c131-50 215-43 307-22s213 32 305 5 168-40 288-25v117z" fill="#112b3d" opacity=".3"/>
-</svg>

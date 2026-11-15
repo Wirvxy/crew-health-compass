@@ -4,9 +4,9 @@ export type Page = 'nasa' | 'checkin' | 'body'
 
 // One entry per sidebar page. The heading text is shown by PageHeader, so every page shares one heading layout.
 export const PAGES: { id: Page; label: string; note: string; eyebrow: string; title: string; description: string; recorded: boolean }[] = [
-  { id: 'nasa', label: 'NASA lab data', note: 'Recorded · OSD-575', eyebrow: 'NASA LABORATORY ARCHIVE', title: 'NASA laboratory history', description: 'Explore recorded laboratory measurements and compare each astronaut’s postflight results with their own preflight average.', recorded: true },
-  { id: 'checkin', label: 'Daily check-in', note: 'Simulated prototype', eyebrow: 'DAILY CHECK-IN', title: 'Your health, in perspective.', description: 'A moment to check in. A clearer picture of what comes next.', recorded: false },
-  { id: 'body', label: 'Body & systems', note: 'Simulated prototype', eyebrow: 'BODY & SYSTEMS', title: 'Body & systems', description: 'Explore the 3D astronaut, review each body system and step through the mission visits. Statuses are simulated.', recorded: false },
+  { id: 'nasa', label: 'NASA lab data', note: 'Mode 2 · Recorded OSD-575', eyebrow: 'MODE 2 · NASA BIOLOGICAL PASSPORT', title: 'NASA laboratory history', description: 'Real NASA OSD-575 research data: each astronaut’s postflight results compared with their own preflight average. Descriptive, not a diagnostic system.', recorded: true },
+  { id: 'checkin', label: 'Daily check-in', note: 'Mode 1 · Synthetic history', eyebrow: 'MODE 1 · MISSION HEALTH MONITOR / DAILY CHECK-IN', title: 'Your health, in perspective.', description: 'Enter today’s measurements. The local backend compares them with this astronaut’s own synthetic history.', recorded: false },
+  { id: 'body', label: 'Body & systems', note: 'Mode 1 · Synthetic history', eyebrow: 'MODE 1 · MISSION HEALTH MONITOR / BODY & SYSTEMS', title: 'Body & systems', description: 'See where the latest check-in differs from personal history, and the evidence behind it.', recorded: false },
 ]
 
 // Simple line icons drawn for this app (no icon library): a lab flask, a clipboard with a tick, and a body outline.

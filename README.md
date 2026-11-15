@@ -1,119 +1,164 @@
 # Crew Health Compass
 
-An offline-first self-assessment prototype for astronauts on long missions, built in 48 hours for the **NASA Space Apps Challenge 2026**: *Create Health Monitoring Software for Astronauts on Space Missions*.
+An offline-first health-monitoring prototype for astronauts on long missions, built for the **NASA Space Apps Challenge 2026**: *Create Health Monitoring Software for Astronauts on Space Missions*.
 
-> **Hackathon prototype.** This is not a medical device. It is not clinically validated and does not comply with any health-data regulation. Demo data is **SIMULATED** and labelled that way, unless a named dataset is cited.
->
-> **Status:** in progress. This README is a skeleton. It will be finished at gate G6 (H40).
+> **Hackathon prototype.** This is not a medical device. It is not clinically validated and does not comply with any health-data regulation. Synthetic data is labelled **SIMULATED**; real data names its source (NASA OSD-575).
 
 ## What it does
 
-An astronaut logs a daily check, such as heart rate, blood pressure, body temperature, sleep hours and mood, plus blood glucose or SpO2 if available. The team confirms the final six indicators at G1.
+The app has two clearly separated modes.
 
-An analytics engine compares each value with two references:
+| Mode | Data | What you can do |
+|---|---|---|
+| **Mode 1: Mission Health Monitor** | Synthetic ISS history: 4 fictional crew members, 3,000 readings (`iss-synthetic-3000/`) | Enter a daily check-in (heart rate, respiratory rate, blood pressure, optional sleep and mood). The backend compares it with the same astronaut's earlier readings in the same activity context. The 3D astronaut shows the result, and the evidence panel shows the numbers behind it. |
+| **Mode 2: NASA Biological Passport** | Real NASA study OSD-575: blood serum panels of the 4 Inspiration4 crew members (`download/`) | Pick a crew member and a postflight visit, and see each biomarker compared with that person's own preflight average and the supplied laboratory limits, plus trajectories across all visits. |
 
-1. **Fixed clinical limits** from a cited indicator catalogue.
-2. **The astronaut's own recent baseline**, plus the recent trend.
+Mode 1 statuses are **green** (no unusual pattern among the compared readings), **amber** (a statistical difference from personal history) or **grey** (not assessed: unknown, not normal). Red is reserved for an approved medical rule, and none exists yet. No treatment advice is shown.
 
-The result is a green, amber or red status for four body systems: cardiovascular, sleep/behavioural, metabolic and thermal. The statuses appear on a clickable body map. Each flag opens a guidance card that gives three things:
+Mode 2 is descriptive. It is not a validation of the Mode 1 detector.
 
-- why the value was flagged
-- the source behind the rule
-- what to do next: self-care, re-measure, call the crew medical officer, or send a report to the flight surgeon
-
-A message from Mars to Earth takes 4–24 minutes one way. For that reason, the core health assessment runs offline and does not use external AI APIs. The report for the flight surgeon is a small packet that can be checked on arrival.
+A message between Mars and Earth takes 4–24 minutes one way. For that reason, everything runs offline: both datasets are read from local files, and no external AI service is called.
 
 ## How it works
 
-This section describes the planned design. The status of each protection is in the [security table](#security-and-data-integrity).
+```
+frontend/ (React)  ──►  api/ (FastAPI, the trust boundary)  ──►  engine/ (Python standard library)
+   check-in form           validates input, loads data once        Mode 1: M2 personal robust statistics
+   3D astronaut            at startup, returns engine output       Mode 2: A1–A4 OSD-575 analyses
+   NASA passport           unchanged
+```
 
-1. The astronaut enters a value in the React UI (`frontend/`).
-2. The FastAPI backend (`api/`) checks three things: the value is well-formed, it is physically plausible, and the sender is allowed to send it. The API is the **trust boundary**: no data reaches storage or the engine without passing these checks.
-3. The value is stored in SQLite with a **hash-chained audit log**. Each record includes a fingerprint of the previous record, so editing a stored record can be detected.
-4. The engine (`engine/`) applies the rules in `catalogue/indicators.yaml` and returns statuses, flags and reasons.
-5. The UI shows the body map, trend charts and guidance cards.
-6. *(If time permits)* the app builds a **signed report packet** for the flight surgeon, who can check that it was not changed in transit.
+1. The browser sends a check-in to `POST /api/monitoring/assess`. In development, Vite's proxy forwards it to the API on the same origin.
+2. The API validates it with A's contract (`validate_manual_check_in`). Invalid input gets HTTP 422.
+3. A's engine compares it with the latest 14 earlier readings of the same astronaut, context and measurement protocol (median and MAD, robust z-score). It never mixes rest and exercise readings.
+4. The UI shows the backend's `overall_status`, `body_marker` and `evidence` without recalculating anything.
+5. Mode 2 reads the A1–A4 results, which the API computes once at startup.
 
-Everything ships as one Docker container, with FastAPI serving the built frontend. The same image runs on a laptop and on a free host for the public demo link.
+The API also keeps a **hash-chained audit log** (`GET /audit/verify`). Check-ins are not stored in it yet.
 
 ## Repository layout
 
 | Path | Contents | Owner |
 |---|---|---|
-| `contracts/` | Shared data models, JSON schemas, example fixtures | A |
-| `engine/` | Analytics: fixed limits, personal baseline, trend | A |
-| `catalogue/` | `indicators.yaml`: units, limits, guidance, cited sources | B |
-| `data/` | Simulator and demo scenarios | B |
-| `eval/` | Evaluation: fixed limits only vs. personal baseline | B |
-| `frontend/` | React/Vite user interface | C |
-| `api/` | FastAPI app, SQLite storage, validation, role checks | D |
-| `security/` | Audit chain, report signing, threat model, security tests | D |
-| `.github/workflows/`, `Dockerfile` | CI and deployment | D |
-| `docs/` | AI-usage log and project notes | *Proposal:* D (everyone adds their own line to `docs/AI_USAGE.md`) |
-| `download/` | NASA data files uploaded at kickoff (see [Data](#data-and-provenance)) | *Proposal:* B; nobody moves or deletes these files until B decides |
+| `engine/` | Analytics: OSD-575 ingestion and analyses (A1–A4), Mode 1 contracts and detection, guides and JSON examples | A |
+| `iss-synthetic-3000/` | Synthetic ISS dataset for Mode 1 (see its README) | B |
+| `download/` | NASA OSD-575 files: the source data for Mode 2 (see its README) | B (*proposal*) |
+| `frontend/` | React + Vite + TypeScript user interface | C |
+| `api/` | FastAPI app: Mode 1 and Mode 2 endpoints, SQLite audit log, tests | D |
+| `docs/` | API guides for the frontend, JSON examples, screenshots, AI-usage log | D (*proposal*) |
+| `.github/workflows/` | CI: frontend build and audit, backend and engine tests, dependency audit, secret scan | D |
 
-Each folder is created when its owner starts work. A confirms this layout at G1.
+## Run it locally
 
-## Running locally
+You need Python 3.11 or newer and Node.js. The commands are for Windows PowerShell, from the repository root.
 
-*Not available yet.* Setup and run commands will be added here when the API skeleton is ready (H2–H4). The local Docker run will be documented by H8.
+**Backend** (first time only: create the environment and install):
+
+```powershell
+python -m venv api\.venv
+api\.venv\Scripts\python.exe -m pip install -r api\requirements-dev.txt
+api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
+```
+
+**Frontend**, in a second window (`npm ci` again after every pull that changes `package-lock.json`):
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Open the address Vite prints, usually `http://localhost:5173`. The settings and their defaults are in [`.env.example`](.env.example) and [`frontend/.env.example`](frontend/.env.example).
+
+**Tests:**
+
+```powershell
+api\.venv\Scripts\python.exe -m unittest discover -s engine
+cd api; .venv\Scripts\python.exe -m pytest; cd ..
+cd frontend; npm run build; cd ..
+```
+
+## Documentation
+
+| Guide | For |
+|---|---|
+| [api/README.md](api/README.md) | Backend setup, configuration, audit log, dependencies |
+| [docs/mode1-api.md](docs/mode1-api.md) | Mode 1 endpoints, request format, errors, A4 passport |
+| [docs/osd575-api.md](docs/osd575-api.md) | Mode 2 OSD-575 endpoints in detail |
+| [engine/README.md](engine/README.md) | Engine overview and the A1–A3 analyses; links to the Mode 1 and A4 guides |
+| [frontend/README.md](frontend/README.md) | Frontend structure, settings and checks |
+| [iss-synthetic-3000/README.md](iss-synthetic-3000/README.md) | How the synthetic dataset was built |
+| [download/README.md](download/README.md) | What the NASA files are and which ones the engine reads |
+| [docs/AI_USAGE.md](docs/AI_USAGE.md) | Log of every AI-assisted change |
 
 ## Data and provenance
 
-Every measurement has a `provenance` field that records where it came from: `user`, `simulated`, or `dataset:<name>`. These values are confirmed at G1. The UI shows a visible **SIMULATED** label on simulated data.
+Every record says where it came from: `user` (entered in the app), `simulated`/`synthetic` (generated), or `dataset:OSD-575` (NASA). The UI labels synthetic data **SIMULATED** and names the NASA study on Mode 2 pages.
 
-### Files in `download/` (pending B's verification)
-
-A teammate uploaded these files at kickoff. D read the copies in this repository, but **B has not yet checked them against the official source**. Each row below says only what the files themselves state, and where. The metadata files are in `download/OSD-575_metadata_OSD-575-ISA/`.
+### NASA OSD-575 (`download/`)
 
 | What the files state | Evidence in the repository |
 |---|---|
 | NASA Open Science Data Repository study OSD-575: "SpaceX Inspiration4 Blood Serum Metabolic Panel and Immune/Cardiac Cytokine Arrays" | `i_Investigation.txt`: `Study Identifier`, `Study Title` |
 | Inspiration4 mission, 16–18 September 2021, "four private astronauts"; public release 14 May 2024 | `i_Investigation.txt`: `Comment[Mission Name]`, `Comment[Mission Start]`, `Comment[Mission End]`, `Study Description`, `Study Public Release Date` |
-| Four subjects with coded IDs C001–C004 | `SUBJECT_ID` column of `LSDS-8_Comprehensive_Metabolic_Panel_CMP.upload_SUBMITTED.csv`; `ID` column of both Eve Panel `_SUBMITTED.csv` files; `Source Name` in `s_OSD-575.txt` |
-| Each subject's sex is recorded | `SEX` column (`F`, `M`) of the metabolic panel `_SUBMITTED.csv`; `Characteristics[Sex]` (`Female`, `Male`) in `s_OSD-575.txt` |
-| Samples only from before launch and after return: L-92, L-44, L-3 ("Launch minus N" days) and R+1, R+45, R+82, R+194 ("Return plus N" days) | `timepoint` column of the metabolic panel `_SUBMITTED.csv`; `Factor Value[Time]` in `s_OSD-575.txt` |
-| Blood tests, not daily check-in vitals: 19 metabolic panel analytes plus immune and cardiac cytokine panels. Of our candidate indicators, only glucose appears. | `ANALYTE` column of the metabolic panel `_SUBMITTED.csv`; `Type` column (`HD71`, `HDCVD9`) of the Eve Panel `_SUBMITTED.csv` files |
-| The `.zip` holds the same six metadata files as the extracted folder | Each file in the zip is byte-identical to its committed copy (`git show HEAD:<path>`) |
+| Four subjects with coded IDs C001–C004 | `SUBJECT_ID` column of `LSDS-8_Comprehensive_Metabolic_Panel_CMP.upload_SUBMITTED.csv`; `Source Name` in `s_OSD-575.txt` |
+| Samples before launch (L-92, L-44, L-3) and after return (R+1, R+45, R+82, R+194) | `timepoint` column of the metabolic panel `_SUBMITTED.csv`; `Factor Value[Time]` in `s_OSD-575.txt` |
+| Blood tests, not daily vitals: a 19-analyte metabolic panel plus immune and cardiac cytokine panels | `ANALYTE` column of the metabolic panel `_SUBMITTED.csv`; `Type` column of the Eve Panel `_SUBMITTED.csv` files |
 
-**Not yet checked (for B):** the OSDR web page itself, the data licence and terms of use, whether these files exactly match the official download, and what the values mean clinically.
+The metadata files are in `download/OSD-575_metadata_OSD-575-ISA/`.
 
-**Open question for the team:** the Inspiration4 crew is publicly known, so coded IDs plus recorded sex may not keep individuals anonymous. The team should decide before any of this data appears in the public demo.
+**Not yet checked (for B):** the OSDR web page itself, the data licence and terms of use, and whether these files exactly match the official download.
+
+**Open question for the team:** the Inspiration4 crew is publicly known, so coded IDs plus recorded sex may not keep individuals anonymous. The team should decide before this data appears in a public demo.
+
+### Synthetic ISS history (`iss-synthetic-3000/`)
+
+These are fictional crew roles (`commander`, `flight_engineer_1`–`3`) on a simulated 2030 mission calendar. Each file keeps the column format of a historical NASA table (Apollo 10, Apollo–Soyuz, Skylab 4), but every value is generated. The method and sources are in its [README](iss-synthetic-3000/README.md).
 
 ## Security and data integrity
 
-The security scope is kept small enough to finish in 48 hours. Each protection below will be tested only on our local prototype.
+The scope is kept small enough for a hackathon. Each protection has been tested only on our local prototype.
 
 | Protection | What it does | Status |
 |---|---|---|
-| Input validation and plausibility checks | Malformed values and unknown units are refused with HTTP 422. Physically impossible values become a "data problem, re-measure" result instead of a medical alarm. | Planned (H2–H11) |
-| Demo access control | Every request carries a fixed demo token for one of two roles: astronaut or flight surgeon. The server uses the token for basic **authentication** (identifying the caller through the token) and **authorization** (checking what that caller may access). An astronaut's token therefore reads only that astronaut's data. | Planned (H8–H14) |
-| Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint. | Built and tested locally. No measurements are stored in it yet, and the response shape is provisional |
-| Secret and dependency scanning | CI runs npm audit, pip-audit, and a gitleaks scan of the full Git history on every pull request and every push to `main`. Binary files are not scanned for secrets. | Running in CI. The gitleaks job is new in this change |
-| Encryption at rest | Measurement values are encrypted inside the SQLite file. | Planned (H6–H8) |
-| Signed report packet | Ed25519 signature. Changing one byte makes verification fail. | Planned, if time permits (H24–H30) |
+| Input validation | Mode 1 check-ins are validated with A's contract at the API. Malformed values, unknown units, unknown crew IDs and non-JSON bodies are refused with HTTP 422 and a message. | Built and tested locally |
+| Plausibility checks | Physically impossible values become a "data problem, re-measure" result instead of a finding | Planned |
+| Offline operation | Both datasets load from local files at startup. Tests block network access during loading and assessment. | Built and tested locally |
+| Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint | Built and tested locally. No check-ins are stored in it yet, and the response shape is provisional |
+| Secret and dependency scanning | CI runs npm audit, pip-audit and a gitleaks scan of the full Git history on every PR into `main` and every push to `main`. Binary files are not scanned for secrets. | Running in CI |
+| Demo access control | A fixed demo token per role (astronaut or flight surgeon): basic **authentication** (identifying the caller through the token) and **authorization** (checking what that caller may access) | Planned |
+| Encryption at rest | Measurement values encrypted inside the SQLite file | Planned |
+| Signed report packet | Ed25519 signature; changing one byte makes verification fail | Planned, if time permits |
 
 Each protection stays **Planned** until it is implemented and tested.
 
 **Known limits:**
 
-- Demo access control is **not** production-ready account management. There are no user accounts, no passwords, and the tokens are fixed demo values. Anyone who has a token can act as that caller. A token that is shared or publicly exposed, for example on the public demo, does not establish a private user identity.
-- The hash chain detects edits to stored records. It has two blind spots. Someone who can write to the database file can change a record and recompute every later hash, because the hash uses no secret key. Deleting records from the end also leaves a valid, shorter chain. Future work: sign the latest hash or keep a copy somewhere else.
-- The encryption key is an environment variable on the same machine, so encryption at rest only protects a database file that has been copied elsewhere. Future work: hardware-backed key storage.
-- `.gitignore` lists files such as `.env` and `*.key` so that `git add` skips them by accident. It is not a guarantee:
+- Demo access control is **not** production-ready account management. There are no user accounts and no passwords, and the tokens are fixed demo values. Anyone who has a token can act as that caller. A token that is shared or publicly exposed does not establish a private user identity.
+- The hash chain detects edits to stored records, but it has two blind spots:
+  - Someone who can write to the database file can change a record and recompute every later hash, because the hash uses no secret key.
+  - Deleting records from the end leaves a valid, shorter chain.
+- Mode 1 thresholds are exploratory statistics on synthetic history, not medical limits.
+- `.gitignore` is not a guarantee:
   - it has no effect on a file that is already tracked
   - `git add -f` overrides it
   - it cannot see a secret pasted into an ordinary file
 
-  Everyone checks their own diff before committing, and the gitleaks scan in CI is the second line of defence. It runs only after a push, so a secret it finds is already in the Git history on GitHub. Local secrets belong in `.env`; `.env.example` lists the variable names with placeholder values.
+  Everyone checks their own diff before committing. The gitleaks scan in CI is the second line of defence, but it runs after a push, so a secret it finds is already on GitHub.
 
 ## How we work
 
-The team and agent rules are in [AGENTS.md](AGENTS.md). [CLAUDE.md](CLAUDE.md) is an identical copy, because Claude Code reads that file name. In short: every folder has one owner, nobody pushes directly to `main`, PRs stay small, and merges happen in windows every two hours.
+The team and agent rules are in [AGENTS.md](AGENTS.md). [CLAUDE.md](CLAUDE.md) is an identical copy, because Claude Code reads that file name.
+
+In short:
+- Every folder has one owner.
+- Nobody pushes directly to `main`.
+- Branches are named `<member letter>-<topic>`.
+- PRs stay small, and merged branches are deleted.
 
 ## AI usage disclosure
 
-We use AI coding assistants: Codex for members A, B and C, and Claude Code for member D. Every agent session is logged in `docs/AI_USAGE.md` with the tool, task, files and human reviewer. The full disclosure required by the event will be added here at G6.
+We use AI coding assistants: Codex for members A, B and C, and Claude Code for member D. Every agent session is logged in [docs/AI_USAGE.md](docs/AI_USAGE.md) with the tool, task, files and human reviewer.
 
 ## Team
 
@@ -124,7 +169,11 @@ We use AI coding assistants: Codex for members A, B and C, and Claude Code for m
 | C | Frontend and UX; demo driver |
 | D | Backend, security, data integrity and release |
 
-## Acknowledgements
+## Acknowledgements and licences
 
 - NASA Space Apps Challenge 2026 and its challenge resources.
-- NASA Open Science Data Repository, study OSD-575 (files in `download/`; how the project uses them is pending B's review).
+- NASA Open Science Data Repository, study [OSD-575](https://osdr.nasa.gov/bio/repo/data/studies/OSD-575) (files in `download/`).
+- The synthetic dataset's historical reference tables are cited in [iss-synthetic-3000/README.md](iss-synthetic-3000/README.md).
+- 3D model: "Astronaut" by Javi_DaviYT on Sketchfab, CC BY 4.0 ([notice](frontend/public/licenses/Astronaut-model-NOTICE.txt)).
+- Font: Inter, SIL Open Font License 1.1 ([licence](frontend/public/licenses/Inter-OFL.txt)).
+- The repository itself has no licence file yet; the team still has to choose one.

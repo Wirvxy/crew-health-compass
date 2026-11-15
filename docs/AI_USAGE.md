@@ -340,3 +340,68 @@ The event requires a description of how AI tools were used. Every agent session 
   - Endpoint names are proposed.
   - Check-ins are not stored or chained.
 - **Human review:** None yet. A's and C's review is requested on the PR.
+
+## 2026-11-14 · Member D · Claude Code · Frontend connected to the Mode 1 and A4 APIs (frontend/, with permission)
+
+- **Task:** C's frontend integration brief, done by D. D reported that A, B and C gave permission. The goal: connect the existing prototype to the real engine through D's API, without redesigning it.
+- **Branch:** `d-frontend-engine`, built on the backend branch `d-mode1-passport-api` (PR #20), so the endpoints exist.
+- **Mode 1:**
+  - **Check-in form:** sends the exact `MODE1_CONTRACT.md` request (decimal strings, units, UTC timestamp, `data_origin: user`) to `POST /api/monitoring/assess`. The form gained crew, context, mission time and respiratory rate, and lost temperature.
+  - **Crew and defaults:** the crew list and the default time after the history come from `GET /api/monitoring/astronauts`.
+  - **No calculations in React:** statuses map to colours for display only. Green means normal, amber means unusual, grey means not assessed, and red is kept for an approved rule.
+  - **Astronaut:** shows a clickable marker only where `body_marker` says.
+  - **Evidence panel:** shows the backend's evidence, findings, limitations and "no approved action protocol" text.
+  - **Removed (mock only):** the mock fixtures, the NASA-visit timeline and the guided demo.
+- **Mode 2:**
+  - **Passport:** the NASA page shows the A4 passport (`GET /datasets/osd575/astronauts/{crew}/passport?visit=`). It shows counts, panels, findings, the later-observations note, limitations and sources. Lab "unavailable" is labelled as not a missing reading.
+  - **Chart link:** each finding's "Chart" button drives the existing A1–A3 chart.
+- **Configuration:** a configurable `VITE_API_BASE_URL` (default: same origin), and `/api` added to the Vite proxy. No CORS.
+- **End-to-end checks:** Windows, dev server proxied to a local API.
+  - Normal: green, no marker.
+  - Unusual: amber chest marker. Clicking the 3D marker opens heart-rate evidence: 85 vs 66.5 bpm, z 12.47825.
+  - Insufficient: grey, with reasons.
+  - Errors: 422 and backend-down messages, and the loading state, show clearly.
+  - C002 R+45 passport: 302 biomarkers, 1 below the lab interval, 284 with no lab comparison. The request is sent with `%2B`.
+  - All 59 page requests were local, and the console shows no errors.
+  - `npm run build` passes.
+  - Screenshots are in `docs/screenshots/frontend-e2e/`.
+- **Not done:**
+  - Mode 1 history charts: the API exposes no per-reading history yet. It needs a public helper from A, or a new endpoint from D.
+  - C's mock-only files are now unused but not deleted.
+- **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Repository structure cleanup
+
+- **Task:** D asked for a clean repository: no duplicate or dead files, no outdated READMEs, and a tidy branch list. D reported permission from A, B and C, and approved each removal and the branch deletions.
+- **Branches:**
+  - #21 (frontend) had been merged into its base branch after that base was already merged into `main`, so `main` lacked the frontend. PR #22 brings commit `c6762b2` to `main`.
+  - 13 remote branches fully merged into `main` were deleted, each checked with `git merge-base --is-ancestor` first.
+  - Kept: `main`, `engine-main` (A's working branch), `data` (B's unmerged work), and the two branches of #22 until it merges.
+- **Branch `d-repo-cleanup`, in four commits:**
+  1. **Removed:**
+     - the duplicate metadata `.zip` (byte-identical to the unzipped folder) and 5 empty `.gitkeep` files;
+     - frontend files nothing imports: the mock loader and its 4.9 MB fixture, the old SystemDetail, TrendChart and DatasetComparison, the unreachable muscle map with its data, licence files and CSS, and an unused SVG;
+     - `frontend/PLAN-CHECKPOINTS.md`.
+  2. **Fonts:** the 4 Inter weights moved from base64 in `index.css` (1.78 MB, now 47 KB) to font files, with the official OFL 1.1 licence from the Inter project's v4.0 release.
+  3. **Ignore rules and settings:**
+     - A focused `.gitignore` replaces the Python template; it ignores the same local files before and after.
+     - The duplicate `frontend/.gitignore` was removed.
+     - New `.env.example` and `frontend/.env.example`.
+  4. **Docs:**
+     - The root README is rewritten to match what is built.
+     - New READMEs for `frontend/` and `download/`.
+     - An overview table in `engine/README.md`.
+     - Passport row in `docs/osd575-api.md`, and updated open points in `docs/mode1-api.md`.
+     - `AGENTS.md`/`CLAUDE.md` now show the real folders, check commands and interfaces (both still identical).
+- **Checks (local, Windows):**
+  - Engine: 73 tests run, 5 skipped (M3 needs scikit-learn).
+  - Backend: 108 passed.
+  - `npm run build` passes.
+  - In the production build, the 4 Inter fonts load (HTTP 200) and the served licence notices open.
+  - Every relative link in the changed docs resolves.
+- **Not changed:**
+  - The data folders' paths (D chose to keep them).
+  - The rules themselves in `AGENTS.md`.
+  - B's `data` branch.
+  - The missing repository licence, which is a team decision.
+- **Human review:** None yet.

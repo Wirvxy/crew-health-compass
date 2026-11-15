@@ -1,6 +1,6 @@
 # Backend API for the frontend: Mode 1 check-in and Mode 2 passport
 
-For C (frontend), from D. **The endpoint names below are proposed.** Please confirm them with D and A before you replace your placeholders. After that, D keeps the response shapes stable.
+For C (frontend), from D. The frontend uses these endpoints (PR #21). D keeps the response shapes stable; any change goes through a `contract-change` PR.
 
 ## 1. Start the backend locally
 
@@ -18,13 +18,7 @@ api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
 
 ## 2. Calling it from the frontend
 
-Use relative paths such as `fetch('/api/monitoring/assess')`. In development, Vite's proxy forwards them to port 8000, so the browser only talks to one origin and **no CORS is needed** (the team rules leave CORS out on purpose).
-
-**Change needed in C's `frontend/vite.config.ts`:** the proxy forwards only `/datasets` today. Add `/api` next to it:
-
-```ts
-server: { proxy: { '/datasets': target, '/api': target } }  // target: same value as today
-```
+Use relative paths such as `fetch('/api/monitoring/assess')`. In development, Vite's proxy (`frontend/vite.config.ts`) forwards `/api` and `/datasets` to port 8000, so the browser only talks to one origin and **no CORS is needed** (the team rules leave CORS out on purpose). Two settings exist: `DATASET_PROXY_TARGET` for the proxy target, and `VITE_API_BASE_URL` for a build that calls another origin. Both are described in `frontend/.env.example`.
 
 ## 3. Endpoints
 
@@ -41,7 +35,7 @@ server: { proxy: { '/datasets': target, '/api': target } }  // target: same valu
 | GET | `/datasets/osd575/comparison?panel=&biomarker=` | Four-astronaut comparison | existing (A3) |
 | GET | `/datasets/osd575/astronauts/{crew_id}/passport?visit=R%2B45` | A4 biological passport | **new** |
 
-The brief suggested `/datasets/osd575/passport?astronaut_id=C002&visit=R%2B45`. I used the crew-path form instead, to match the four existing crew endpoints. It is easy to change before you integrate.
+The passport uses the crew-path form to match the four existing crew endpoints.
 
 ## 4. Mode 1: assess a manual check-in
 
@@ -125,8 +119,7 @@ Exception: when a required query parameter is missing on a GET endpoint (for exa
 
 ## 7. Open points
 
-- **For A:** the contract accepts only `data_origin: "user"`, so a "Fill simulated example" check-in would be labelled as user data. How should simulated demo entries be marked?
+- **For A:** the contract accepts only `data_origin: "user"`, so a check-in filled with the frontend's example values is labelled as user data. How should simulated demo entries be marked?
 - **For A:** value errors say "Expected a finite decimal value" without naming the field. Unit errors do name it.
-- **For A and C:** the engine's systems (cardiovascular, respiratory, wellbeing) differ from the frontend's four system cards. Agree on a mapping.
-- **For C:** add `/api` to the Vite proxy (section 2).
+- **For A or D:** the Mode 1 history chart needs the individual earlier readings, which the API does not return yet.
 - **Storage:** check-ins are assessed but not stored, and they are not yet in the audit hash chain.
