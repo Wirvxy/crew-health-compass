@@ -1,8 +1,9 @@
 """FastAPI application.
 
 So far it has a liveness endpoint, the audit-chain check, read-only
-endpoints for the NASA OSD-575 dataset (app/osd575.py, Mode 2), and the
-Mode 1 check-in assessment against synthetic history (app/monitoring.py).
+endpoints for the NASA OSD-575 dataset (app/osd575.py, Mode 2), the
+Mode 1 check-in assessment against synthetic history (app/monitoring.py),
+and read-only Mars radiation history (app/radiation.py, Mission Environment).
 Check-ins are assessed but not stored yet.
 """
 
@@ -12,21 +13,23 @@ from typing import Any
 
 from fastapi import FastAPI
 
-from app import audit, monitoring, osd575
+from app import audit, monitoring, osd575, radiation
 from app.db import transaction
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Load both datasets once, before serving requests.
+    """Load the three datasets once, before serving requests.
 
-    Neither loader raises for missing or unusable data. /health keeps
-    working, and the affected endpoints answer 503 until the server is
-    restarted with valid files.
+    No loader raises for missing or unusable data. /health keeps working,
+    and only the affected endpoints answer 503 until the server is restarted
+    with valid files.
     """
     osd575.load_dataset()
     monitoring.load_history()
+    radiation.load_history()
     yield
+    radiation.clear_history()
     monitoring.clear_history()
     osd575.clear_dataset()
 
@@ -34,6 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Crew Health Compass API", version="0.1.0", lifespan=lifespan)
 app.include_router(osd575.router)
 app.include_router(monitoring.router)
+app.include_router(radiation.router)
 
 
 @app.get("/health")

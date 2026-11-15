@@ -1,0 +1,78 @@
+{
+  "dataset_id": "MSL_RAD_OBS-L2",
+  "data_origin": "historical_nasa_observations",
+  "mission": "Mars Science Laboratory (Curiosity)",
+  "instrument": "Radiation Assessment Detector (RAD)",
+  "measurement": "absorbed_dose_rate",
+  "unit": "µGy/day",
+  "source": {
+    "csv_file": "nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv",
+    "csv_sha256": "d514a88fdc9a539a3b470b57a4d28c95cec6b1494474c696a27d629cda1cdea5",
+    "dataset_url": "https://data.nasa.gov/dataset/mars-science-laboratory-msl-radiation-assessment-detector-rad-level-2-observation-dosimetr"
+  },
+  "start_date": "2024-05-20",
+  "end_date": "2024-05-20",
+  "observation_count": 139,
+  "series": [
+    {
+      "detector": "E",
+      "start_timestamp_utc": "2024-05-20T00:11:02.000Z",
+      "end_timestamp_utc": "2024-05-20T23:56:36.000Z",
+      "observation_count": 139,
+      "observations": [
+        {
+          "timestamp_utc": "2024-05-20T00:11:02.000Z",
+          "detector": "E",
+          "value": "134.71167",
+          "value_status": "valid",
+          "raw_value": "134.71167",
+          "source_line": 5834,
+          "nasa_cdf_url": "https://cdaweb.gsfc.nasa.gov/sp_phys/data/msl/rad/cdf/obs-l2/2024/msl_rad_obs-l2_2024141_v04.cdf"
+        },
+        {
+          "timestamp_utc": "2024-05-20T00:28:07.000Z",
+          "detector": "E",
+          "value": "131.47975",
+          "value_status": "valid",
+          "raw_value": "131.47975",
+          "source_line": 5835,
+          "nasa_cdf_url": "https://cdaweb.gsfc.nasa.gov/sp_phys/data/msl/rad/cdf/obs-l2/2024/msl_rad_obs-l2_2024141_v04.cdf"
+        },
+        {
+          "timestamp_utc": "2024-05-20T00:48:28.000Z",
+          "detector": "E",
+          "value": "134.503",
+          "value_status": "valid",
+          "raw_value": "134.503",
+          "source_line": 5836,
+          "nasa_cdf_url": "https://cdaweb.gsfc.nasa.gov/sp_phys/data/msl/rad/cdf/obs-l2/2024/msl_rad_obs-l2_2024141_v04.cdf"
+        }
+      ],
+      "statistics": {
+        "observation_count": 139,
+        "valid_count": 139,
+        "missing_count": 0,
+        "invalid_count": 0,
+        "min": "130.54411",
+        "max": "8377.913",
+        "mean": "1881.04975",
+        "median": "1153.6759",
+        "first_to_last_change": "439.06219",
+        "peak": {
+          "timestamp_utc": "2024-05-20T06:15:19.000Z",
+          "detector": "E",
+          "value": "8377.913",
+          "value_status": "valid",
+          "raw_value": "8377.913",
+          "source_line": 5857,
+          "nasa_cdf_url": "https://cdaweb.gsfc.nasa.gov/sp_phys/data/msl/rad/cdf/obs-l2/2024/msl_rad_obs-l2_2024141_v04.cdf"
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Sampling intervals vary. Statistics summarize recorded samples with equal weight.",
+    "These are detector-specific absorbed dose rates. Accumulated dose and personal exposure require other inputs.",
+    "The CSV omits original CDF variable names, quality flags, detector live time, and uncertainties."
+  ]
+}

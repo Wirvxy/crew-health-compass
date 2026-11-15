@@ -9,6 +9,7 @@ This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite
 | `app/audit.py` | Hash-chained `records` table: append and verify |
 | `app/osd575.py` | Read-only `/datasets/osd575/...` endpoints built on A's `engine/`: astronauts, panels, measurements, postflight, trajectory, comparison and the A4 passport (see [docs/osd575-api.md](../docs/osd575-api.md)) |
 | `app/monitoring.py` | Mode 1: `GET /api/monitoring/astronauts` and `POST /api/monitoring/assess`, built on A's M2 statistical detection and B's synthetic history (see [docs/mode1-api.md](../docs/mode1-api.md)) |
+| `app/radiation.py` | Mission Environment: `GET /api/environment/radiation/timeline` and `GET /api/environment/radiation/events/may-20-2024`, built on A's R1 radiation history engine (see [docs/radiation-api.md](../docs/radiation-api.md)) |
 | `tests/` | pytest tests. Database tests use temporary databases; OSD-575 tests read `download/` |
 | `requirements.txt` | Runtime dependencies, pinned |
 | `requirements-dev.txt` | Runtime and test dependencies, pinned |
@@ -36,9 +37,9 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Expected result: `108 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
+Expected result: `126 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
 
-A's engine has its own `unittest` suite (73 tests; 5 are skipped unless the optional scikit-learn for the disabled M3 experiment is installed). Run it from the repository root:
+A's engine has its own `unittest` suite (78 tests; 5 are skipped unless the optional scikit-learn for the disabled M3 experiment is installed). Run it from the repository root:
 
 ```powershell
 api\.venv\Scripts\python.exe -m unittest discover -s engine
@@ -56,9 +57,9 @@ api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
 
 The old command, run from `api/`, now stops with `ModuleNotFoundError: No module named 'engine'`.
 
-At startup the server loads the OSD-575 CSVs once and runs A's analyses (about 0.2 s), then loads B's synthetic Mode 1 history once (about 0.2 s). If either dataset is missing or unusable:
+At startup the server loads the OSD-575 CSVs once and runs A's analyses (about 0.2 s), then loads B's synthetic Mode 1 history once (about 0.2 s), then the Curiosity RAD radiation CSV. If any dataset is missing or unusable:
 - The server still starts, and `/health` still answers.
-- The affected endpoints (`/datasets/osd575/...` or `/api/monitoring/...`) return 503, naming the problem without any server path.
+- The affected endpoints (`/datasets/osd575/...`, `/api/monitoring/...` or `/api/environment/radiation/...`) return 503, naming the problem without any server path.
 - The error is written to the server log.
 
 Fix the files, then **restart the server**. It doesn't re-read them while running.
@@ -78,6 +79,7 @@ Expected result: a `status` column showing `ok`. Press Ctrl+C in the first windo
 | `CREW_HEALTH_DB_PATH` | Path of the SQLite database file | `api/crew_health.db` (Git ignores `*.db`) |
 | `CREW_HEALTH_OSD575_DIR` | Folder holding the four OSD-575 `*_TRANSFORMED.csv` files | the repository's `download/` |
 | `CREW_HEALTH_MODE1_DATA` | Folder or ZIP holding B's synthetic `iss-synthetic-3000` dataset | the repository's `iss-synthetic-3000/` |
+| `CREW_HEALTH_RAD_CSV` | The Curiosity RAD radiation CSV (Mission Environment) | `raw data/NASA Curiosity radiation/nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv` |
 
 To set it for the current PowerShell window, run `$env:CREW_HEALTH_DB_PATH = "C:\path\to\crew_health.db"`. The folder must already exist. The tests check that the path is read from this variable.
 

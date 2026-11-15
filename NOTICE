@@ -31,6 +31,14 @@ DATA
   - NASA OCHMO, "Exercise Overview" (OCHMO-TB-031)
     https://www.nasa.gov/ochmo-tb-031-exercise-overview-2/
 
+- NASA Mars Science Laboratory (Curiosity) Radiation Assessment Detector,
+  Level 2 observations, dataset MSL_RAD_OBS-L2, via NASA CDAWeb
+  (raw data/NASA Curiosity radiation/). Exported to CSV by Ayman El Kerboubi;
+  every reading keeps its NASA source file URL.
+  https://data.nasa.gov/dataset/mars-science-laboratory-msl-radiation-assessment-detector-rad-level-2-observation-dosimetr
+  Event context: NASA, "Curiosity Sees Streaks and Specks During 2024 Solar Storm"
+  https://science.nasa.gov/resource/curiosity-sees-streaks-and-specks-during-2024-solar-storm/
+
 ASSETS BUNDLED WITH THE FRONTEND
 
 - Inter font, version 4.001. Copyright 2016 The Inter Project Authors.

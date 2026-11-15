@@ -9,6 +9,7 @@ Person A's analytics. Everything uses the Python standard library and runs offli
 | Mode 1: synthetic data ingestion and contracts | `mode1_ingestion.py`, `mode1_contracts.py` | [MODE1_CONTRACT.md](MODE1_CONTRACT.md) |
 | Mode 1: M2 personal statistical detection (used by the API) | `mode1_detection.py` | [MODE1_DETECTION.md](MODE1_DETECTION.md) |
 | Mode 1: M3 Isolation Forest experiment (off in the API) | `mode1_ml.py`, `mode1_ml_evaluation.py` | [MODE1_ML.md](MODE1_ML.md) |
+| Mission Environment, R1: Curiosity RAD radiation history | `radiation_history.py` | [RADIATION_HISTORY.md](RADIATION_HISTORY.md) |
 
 JSON examples are in `biological_passport_examples/` and `mode1_examples/`. Tests are the `test_*.py` files: run `python -m unittest discover -s engine` from the repository root.
 

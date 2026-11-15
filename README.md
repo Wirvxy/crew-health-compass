@@ -17,7 +17,7 @@ Mode 1 statuses are **green** (no unusual pattern among the compared readings), 
 
 Mode 2 is descriptive. It is not a validation of the Mode 1 detector.
 
-A message between Mars and Earth takes 4–24 minutes one way. For that reason, everything runs offline: both datasets are read from local files, and no external AI service is called.
+A message between Mars and Earth takes 4–24 minutes one way. For that reason, everything runs offline: every dataset is read from local files, and no external AI service is called.
 
 ## How it works
 
@@ -43,6 +43,7 @@ The API also keeps a **hash-chained audit log** (`GET /audit/verify`). Check-ins
 | `engine/` | Analytics: OSD-575 ingestion and analyses (A1–A4), Mode 1 contracts and detection, guides and JSON examples | Iliass Barrou |
 | `iss-synthetic-3000/` | Synthetic ISS dataset for Mode 1 (see its README) | Ayman El Kerboubi |
 | `download/` | NASA OSD-575 files: the source data for Mode 2 (see its README) | Ayman El Kerboubi (*proposal*) |
+| `raw data/NASA Curiosity radiation/` | Curiosity RAD radiation CSV for the Mission Environment tab (see its README) | Ayman El Kerboubi |
 | `frontend/` | React + Vite + TypeScript user interface | Taha Errassif |
 | `api/` | FastAPI app: Mode 1 and Mode 2 endpoints, SQLite audit log, tests | Monssif El Haouari |
 | `docs/` | API guides for the frontend, JSON examples, screenshots, AI-usage log | Monssif El Haouari (*proposal*) |
@@ -85,6 +86,7 @@ cd frontend; npm run build; cd ..
 | [api/README.md](api/README.md) | Backend setup, configuration, audit log, dependencies |
 | [docs/mode1-api.md](docs/mode1-api.md) | Mode 1 endpoints, request format, errors, A4 passport |
 | [docs/osd575-api.md](docs/osd575-api.md) | Mode 2 OSD-575 endpoints in detail |
+| [docs/radiation-api.md](docs/radiation-api.md) | Mission Environment radiation endpoints, fields and errors |
 | [engine/README.md](engine/README.md) | Engine overview and the A1–A3 analyses; links to the Mode 1 and A4 guides |
 | [frontend/README.md](frontend/README.md) | Frontend structure, settings and checks |
 | [iss-synthetic-3000/README.md](iss-synthetic-3000/README.md) | How the synthetic dataset was built |
@@ -115,6 +117,10 @@ The metadata files are in `download/OSD-575_metadata_OSD-575-ISA/`.
 
 These are fictional crew roles (`commander`, `flight_engineer_1`–`3`) on a simulated 2030 mission calendar. Each file keeps the column format of a historical NASA table (Apollo 10, Apollo–Soyuz, Skylab 4), but every value is generated. The method and sources are in its [README](iss-synthetic-3000/README.md).
 
+### Curiosity radiation history (`raw data/NASA Curiosity radiation/`)
+
+These are real NASA measurements: 5,971 absorbed dose **rates** (µGy/day) recorded by the Radiation Assessment Detector on the Curiosity rover, on the Martian surface, from 7 March to 20 May 2024. The period includes NASA's documented solar event on 20 May 2024. They describe the Mars environment, not any astronaut's exposure, and they never feed the health assessment. Details are in its [README](raw%20data/NASA%20Curiosity%20radiation/README.md).
+
 ## Security and data integrity
 
 The scope is kept small enough for a hackathon. Each protection has been tested only on our local prototype.
@@ -123,7 +129,7 @@ The scope is kept small enough for a hackathon. Each protection has been tested 
 |---|---|---|
 | Input validation | Mode 1 check-ins are validated with Iliass Barrou's contract at the API. Malformed values, unknown units, unknown crew IDs and non-JSON bodies are refused with HTTP 422 and a message. | Built and tested locally |
 | Plausibility checks | Physically impossible values become a "data problem, re-measure" result instead of a finding | Planned |
-| Offline operation | Both datasets load from local files at startup. Tests block network access during loading and assessment. | Built and tested locally |
+| Offline operation | All three datasets load from local files at startup. Tests block network access during loading and assessment. | Built and tested locally |
 | Hash-chained audit log | `GET /audit/verify` names the first stored record that no longer matches its fingerprint | Built and tested locally. No check-ins are stored in it yet, and the response shape is provisional |
 | Secret and dependency scanning | CI runs npm audit, pip-audit and a gitleaks scan of the full Git history on every PR into `main` and every push to `main`. Binary files are not scanned for secrets. | Running in CI |
 | Demo access control | A fixed demo token per role (astronaut or flight surgeon): basic **authentication** (identifying the caller through the token) and **authorization** (checking what that caller may access) | Planned |
@@ -173,6 +179,7 @@ We use AI coding assistants: Codex for Iliass Barrou, Ayman El Kerboubi and Taha
 
 - NASA Space Apps Challenge 2026 and its challenge resources.
 - NASA Open Science Data Repository, study [OSD-575](https://osdr.nasa.gov/bio/repo/data/studies/OSD-575) (files in `download/`).
+- NASA Curiosity RAD Level 2 data ([MSL_RAD_OBS-L2](https://data.nasa.gov/dataset/mars-science-laboratory-msl-radiation-assessment-detector-rad-level-2-observation-dosimetr)), exported by Ayman El Kerboubi (`raw data/NASA Curiosity radiation/`).
 - The synthetic dataset's historical reference tables are cited in [iss-synthetic-3000/README.md](iss-synthetic-3000/README.md).
 - 3D model: "Astronaut" by Javi_DaviYT on Sketchfab, CC BY 4.0 ([notice](frontend/public/licenses/Astronaut-model-NOTICE.txt)).
 - Font: Inter, SIL Open Font License 1.1 ([licence](frontend/public/licenses/Inter-OFL.txt)).
