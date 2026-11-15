@@ -38,6 +38,5 @@ export default function Sidebar({ page, profile, onPage, onSignOut }: { page: Pa
       <span className="profile-who"><small>Signed in as</small><strong id="signed-in-name">{profile.name}</strong></span>
       <button type="button" id="logout" className="logout" onClick={onSignOut}>Log out</button>
     </div>
-    <p className="sidebar-note">Research prototype, not a diagnostic device. Profiles are demo access control, without passwords.</p>
   </nav>
 }

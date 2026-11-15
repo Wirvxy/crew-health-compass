@@ -9,7 +9,7 @@ const PHOTOS: Record<string, { src: string; focus: string }> = {
   commander: { src: commander, focus: 'center 30%' },
   flight_engineer_1: { src: flightEngineer1, focus: 'center 35%' },
   flight_engineer_2: { src: flightEngineer2, focus: 'center 30%' },
-  flight_engineer_3: { src: flightEngineer3, focus: 'center 60%' },
+  flight_engineer_3: { src: flightEngineer3, focus: 'center' },
 }
 
 /** The profile's picture, or nothing for a profile without one (the caller then shows its fallback). */
