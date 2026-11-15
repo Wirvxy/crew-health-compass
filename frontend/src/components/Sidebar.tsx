@@ -1,13 +1,16 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
+import logoUrl from '../assets/brand/crew-health-compass-logo.png'
 
 export type Page = 'nasa' | 'checkin' | 'body' | 'environment'
+export const HOME_PAGE: Page = 'checkin'
 
-// One entry per sidebar page. The heading text is shown by PageHeader, so every page shares one heading layout.
-export const PAGES: { id: Page; label: string; note: string; eyebrow: string; title: string; description: string; badge: string; badgeTitle: string; recorded: boolean }[] = [
-  { id: 'nasa', label: 'NASA lab data', note: 'Mode 2 · Recorded OSD-575', eyebrow: 'MODE 2 · NASA BIOLOGICAL PASSPORT', title: 'NASA laboratory history', description: 'Real NASA OSD-575 research data: each astronaut’s postflight results compared with their own preflight average. Descriptive, not a diagnostic system.', badge: 'RECORDED DATA · OSD-575', badgeTitle: 'Recorded laboratory values from the NASA OSD-575 study.', recorded: true },
-  { id: 'checkin', label: 'Daily check-in', note: 'Mode 1 · Synthetic history', eyebrow: 'MODE 1 · MISSION HEALTH MONITOR / DAILY CHECK-IN', title: 'Your health, in perspective.', description: 'Enter today’s measurements. The local backend compares them with this astronaut’s own synthetic history.', badge: 'SIMULATED DATA', badgeTitle: 'Results compare check-ins with synthetic history (fictional crew and readings).', recorded: false },
-  { id: 'body', label: 'Body & systems', note: 'Mode 1 · Synthetic history', eyebrow: 'MODE 1 · MISSION HEALTH MONITOR / BODY & SYSTEMS', title: 'Body & systems', description: 'See where the latest check-in differs from personal history, and the evidence behind it.', badge: 'SIMULATED DATA', badgeTitle: 'Results compare check-ins with synthetic history (fictional crew and readings).', recorded: false },
-  { id: 'environment', label: 'Mission Environment', note: 'Recorded · Curiosity RAD', eyebrow: 'MISSION ENVIRONMENT · MARS RADIATION HISTORY', title: 'Mars Radiation History', description: 'Explore historical NASA Curiosity radiation measurements on the Martian surface.', badge: 'RECORDED DATA · CURIOSITY RAD', badgeTitle: 'Historical measurements by NASA Curiosity’s Radiation Assessment Detector on Mars.', recorded: true },
+// One entry per sidebar page, in sidebar order. The sidebar shows only the icon and label; the heading, and the
+// SIMULATED or RECORDED badge that tells the data apart, are shown by PageHeader on every page.
+export const PAGES: { id: Page; label: string; eyebrow: string; title: string; description: string; badge: string; badgeTitle: string; recorded: boolean }[] = [
+  { id: 'checkin', label: 'Daily check-in', eyebrow: 'MODE 1 · MISSION HEALTH MONITOR / DAILY CHECK-IN', title: 'Your health, in perspective.', description: 'Enter today’s measurements. The local backend compares them with this astronaut’s own synthetic history.', badge: 'SIMULATED DATA', badgeTitle: 'Results compare check-ins with synthetic history (fictional crew and readings).', recorded: false },
+  { id: 'body', label: 'Body & systems', eyebrow: 'MODE 1 · MISSION HEALTH MONITOR / BODY & SYSTEMS', title: 'Body & systems', description: 'See where the latest check-in differs from personal history, and the evidence behind it.', badge: 'SIMULATED DATA', badgeTitle: 'Results compare check-ins with synthetic history (fictional crew and readings).', recorded: false },
+  { id: 'nasa', label: 'NASA lab data', eyebrow: 'MODE 2 · NASA BIOLOGICAL PASSPORT', title: 'NASA laboratory history', description: 'Real NASA OSD-575 research data: each astronaut’s postflight results compared with their own preflight average. Descriptive, not a diagnostic system.', badge: 'RECORDED DATA · OSD-575', badgeTitle: 'Recorded laboratory values from the NASA OSD-575 study.', recorded: true },
+  { id: 'environment', label: 'Mission Environment', eyebrow: 'MISSION ENVIRONMENT · MARS RADIATION HISTORY', title: 'Mars Radiation History', description: 'Explore historical NASA Curiosity radiation measurements on the Martian surface.', badge: 'RECORDED DATA · CURIOSITY RAD', badgeTitle: 'Historical measurements by NASA Curiosity’s Radiation Assessment Detector on Mars.', recorded: true },
 ]
 
 // Simple line icons drawn for this app (no icon library): a lab flask, a clipboard with a tick, a body outline and the Sun.
@@ -22,9 +25,17 @@ export function PageIcon({ page }: { page: Page }) {
 }
 
 export default function Sidebar({ page, onPage }: { page: Page; onPage: (page: Page) => void }) {
+  // The logo is a real link (it also works with a new tab), but a normal click switches page in place, keeping drafts and results.
+  function home(e: MouseEvent<HTMLAnchorElement>) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+    e.preventDefault(); onPage(HOME_PAGE)
+  }
   return <nav className="sidebar" aria-label="Pages">
-    <div className="brand"><svg className="brand-logo" viewBox="0 0 44 44" aria-hidden="true"><rect x="1" y="1" width="42" height="42" rx="11" fill="none" stroke="currentColor" /><circle cx="22" cy="22" r="11" fill="none" stroke="currentColor" /><path d="m27 15-3 10-8 4 3-10z" fill="none" stroke="currentColor" /><path d="M22 5v5m0 24v5M5 22h5m24 0h5" stroke="currentColor" /></svg><div><strong>Crew Health Compass</strong><small>PERSONAL BASELINE · MISSION PERSPECTIVE</small></div></div>
-    <ul className="sidebar-links">{PAGES.map(p => <li key={p.id}><button data-page={p.id} aria-current={p.id === page ? 'page' : undefined} onClick={() => onPage(p.id)}><span className="nav-icon"><PageIcon page={p.id}/></span><span className="nav-text"><strong>{p.label}</strong><small>{p.note}</small></span></button></li>)}</ul>
+    <a className="brand-link" href="./" onClick={home}>
+      <span className="brand-logo-frame"><img src={logoUrl} alt="Crew Health Compass" width={2172} height={724} decoding="async" /></span>
+      <span className="sr-only">: go to Daily check-in</span>
+    </a>
+    <ul className="sidebar-links">{PAGES.map(p => <li key={p.id}><button data-page={p.id} aria-current={p.id === page ? 'page' : undefined} onClick={() => onPage(p.id)}><span className="nav-icon"><PageIcon page={p.id}/></span><span className="nav-text"><strong>{p.label}</strong></span></button></li>)}</ul>
     <p className="sidebar-note">Research prototype, not a diagnostic device.</p>
   </nav>
 }
