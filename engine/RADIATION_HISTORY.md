@@ -4,7 +4,7 @@ R1 serves historical measurements from Curiosity's Radiation Assessment Detector
 
 ## Data and provenance
 
-The default path is `raw data/NASA Curiosity radiation/nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv` from the repository root. The same export is on Person B's `origin/data` branch. Pass a local file path explicitly if the branch being used for integration lacks the default path. The inspected local CSV has SHA-256 `d514a88fdc9a539a3b470b57a4d28c95cec6b1494474c696a27d629cda1cdea5`. Line endings may affect the hash.
+The default path is `raw data/NASA Curiosity radiation/nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv` from the repository root. The CSV is committed at that path, exported by Person B, and kept byte-for-byte by `.gitattributes`, so its SHA-256 is `d514a88fdc9a539a3b470b57a4d28c95cec6b1494474c696a27d629cda1cdea5` on every checkout. Pass a local file path explicitly to read a different export.
 
 The four columns are `timestamp_utc`, `absorbed_dose_rate_ugy_per_day`, `detector`, and `nasa_cdf_url`. The export has 5,971 valid detector E readings and no duplicate detector/timestamp pairs. The range is 2024-03-07 00:14:58 to 2024-05-20 23:56:36 UTC, with readings on all 75 UTC dates. The most frequent interval is 17 min 6 sec, with intervals varying from 7 min 49 sec to 20 h 39 min 16 sec. There are 75 distinct CDF URLs. The original CDF variable name, quality flags, detector live time, and uncertainties are absent from this export, so quality-filter status cannot be confirmed from the CSV.
 
@@ -89,6 +89,6 @@ NASA reported charged particles arriving at the Martian surface and a sharp rise
 
 ## Integration
 
-**Person D.** The proposed read-only routes are `GET /mission-environment/radiation-history` with optional `start_date`, `end_date`, `detector`, and `include_statistics` queries, and `GET /mission-environment/radiation-history/events/2024-05-20` with optional `detector`. Load the configured CSV at startup and return the function dictionaries directly. Report an unavailable local dataset on those routes if loading fails.
+**Person D.** Implemented as `GET /api/environment/radiation/timeline` with optional `start_date`, `end_date`, `detector`, and `include_statistics` queries, and `GET /api/environment/radiation/events/may-20-2024` with optional `detector` (see `docs/radiation-api.md`). The API loads the configured CSV at startup, returns the function dictionaries directly, and reports an unavailable local dataset on those routes if loading fails.
 
 **Person C.** Under **Mission Environment → Radiation History**, label the data as historical. Plot each detector separately using `series[].observations[].timestamp_utc` on a continuous UTC axis and `value` on the Y axis. Keep raw strings for tooltips and convert values for chart coordinates as needed. Show null readings as gaps, leave gaps across long intervals, and display the detector and `unit` on the chart. Use `series[].statistics.peak`, `preceding_week_comparison`, and `source_reference` for the May 20 callout. Use `evidence_available` to control the measurement panel and keep the event source link visible.
