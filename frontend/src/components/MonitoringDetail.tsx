@@ -21,7 +21,7 @@ export default function MonitoringDetail({ result, selected, example, onSelect }
         : <p>Not compared. {reasons.join(' ') || 'No comparable history for this measurement.'}</p>}</section>
     <section className="info-section"><div className="section-label"><span className="step-num">02</span> WHAT THE BACKEND FOUND</div><p>{findings.join(' ') || (stats?.status === 'normal' ? 'No finding for this measurement: it did not exceed the statistical threshold.' : 'No finding: this measurement was not compared.')}</p></section>
     <section className="action-box"><div className="section-label"><span className="step-num">03</span> NEXT ACTION</div><p>{result.next_action_protocol_id ? `Approved protocol: ${result.next_action_protocol_id}` : 'No approved action protocol is available. This is an exploratory monitoring finding, not a diagnosis.'}</p></section>
-    {result.insufficient_data.length > 0 && <details className="info-section" open={result.overall_status !== 'unusual'}><summary>Limitations of this assessment ({result.insufficient_data.length})</summary><ul className="details-note">{result.insufficient_data.map(r => <li key={r}>{r}</li>)}</ul></details>}
+    {result.insufficient_data.length > 0 && <details className="info-section" open><summary>Limitations of this assessment ({result.insufficient_data.length})</summary><ul className="details-note">{result.insufficient_data.map(r => <li key={r}>{r}</li>)}</ul></details>}
     <p className="details-note">Overall: {result.explanation} History: Person B's synthetic ISS dataset (fictional crew and readings). Method: A's M2 personal robust statistics (median and MAD); the M3 machine-learning model is off.</p>
   </div></section>
 }

@@ -35,6 +35,7 @@ export default function DailyCheckIn({ crew, crews, draft, submissions, historyE
     return <div className="field"><label className="field-label" htmlFor={id}><span>{label}{optional && ' (optional)'}</span><span className="unit">{unit}</span></label><input id={id} name={id} type="number" step="any" inputMode="decimal" placeholder={placeholder} value={draft.values[id]} onChange={e => change(id, e.target.value)} aria-invalid={!!errors[id]} aria-describedby={`${id}-error`} required={!optional} /><p id={`${id}-error`} className="error">{errors[id]}</p></div>
   }
   const view = result ? STATUS_VIEW[result.overall_status] : null
+  const draftChanged = !!submitted && Object.entries(draft.values).some(([key, value]) => value !== submitted.values[key as DailyField])
   return <section className="panel checkin-panel" aria-labelledby="daily-checkin"><div className="panel-content"><div className="panel-intro"><div><p className="eyebrow">01 / HOW AM I TODAY?</p><h2 id="daily-checkin">Daily check-in</h2></div><span className="zone-number">MODE 1</span></div><p className="description">Compared only with this astronaut's own earlier readings, in the same activity context. The history is synthetic: fictional crew and readings.</p>
     <div className="form-heading"><span id="entry-provenance">{draft.simulated ? 'EXAMPLE VALUES · filled by the app' : 'Manual entry'}</span></div>
     <div className="example-buttons" role="group" aria-label="Fill example values">{([['typical', 'Typical day'], ['high', 'High heart rate'], ['early', 'Early mission']] as const).map(([kind, label]) => <button key={kind} type="button" className="text-button" onClick={() => { setErrors({}); onExample(kind) }}>Example: {label} ↗</button>)}</div>
@@ -47,6 +48,13 @@ export default function DailyCheckIn({ crew, crews, draft, submissions, historyE
       <div className="field"><label className="field-label" htmlFor="mood"><span>How are you feeling? (optional)</span><span className="unit">self-reported</span></label><select id="mood" value={draft.values.mood} onChange={e => change('mood', e.target.value)}><option value="">Not answered</option>{MOODS.map(m => <option key={m} value={m}>{m[0].toUpperCase() + m.slice(1)}</option>)}</select></div>
     </div><div className="checkin-meta"><div className="micro" id="crew-pending">{crews.length - checked.length} crew without a check-in this session</div><div className="crew-checks">{crews.map(c => <span className={`crew-chip ${checked.includes(c) ? 'done' : ''}`} key={c}>{checked.includes(c) ? '✓' : '○'} {words(c)}</span>)}</div></div><button className="primary submit" type="submit" disabled={pending}>{pending ? 'Assessing…' : <>Submit and assess <span aria-hidden="true">→</span></>}</button><div className="submission" id="last-submitted" role="status">{submitted ? `Last submitted: ${submitted.timestamp} · ${submitted.provenance === 'simulated' ? 'EXAMPLE VALUES' : 'User-entered'}` : 'Last submitted: not yet in this session.'}</div></form>
     {error && <p className="checkin-error" role="alert">{error}</p>}
-    {result && view && <div className="result-card" aria-live="polite"><StatusLabel status={view.tone} label={view.label} /><p>{result.explanation}</p><button type="button" className="text-button" onClick={onShowBody}>See it on the astronaut →</button></div>}
-    <div className="checkin-foot">Assessed by the local backend with personal robust statistics. Nothing is sent outside this computer.<br />An exploratory monitoring result, not a diagnosis.</div></div></section>
+    {result && view && <div className="result-card" aria-live="polite">
+      <StatusLabel status={view.tone} label={view.label} />
+      <p>{result.explanation}</p>
+      <p>Assessed at {result.timestamp} · {words(result.activity_context)}.</p>
+      {draftChanged && <p className="assessment-draft-note">The form has changed since this result. Submit again to assess your updated measurements.</p>}
+      {result.insufficient_data.length > 0 && <details><summary>Measurements with limited history ({result.insufficient_data.length})</summary><ul>{result.insufficient_data.map(reason => <li key={reason}>{reason}</li>)}</ul></details>}
+      <button type="button" className="text-button" onClick={onShowBody}>See it on the astronaut →</button>
+    </div>}
+    <div className="checkin-foot">Assessed by the local backend against synthetic personal history. Drafts and results are kept for this tab session and clear on reload.<br />An exploratory monitoring result, not a diagnosis.</div></div></section>
 }

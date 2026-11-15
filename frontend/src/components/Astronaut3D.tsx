@@ -1,5 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { AstronautHealth, HEALTH_COLORS, healthZones } from './astronautHealth'
+import type { HealthSignal } from './astronautHealth'
+import type { CSSProperties } from 'react'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 
 // "Astronaut" by Javi_DaviYT on Sketchfab, CC BY 4.0 (see public/licenses/Astronaut-model-NOTICE.txt).
@@ -10,14 +13,7 @@ const LICENSE_URL = 'https://creativecommons.org/licenses/by/4.0/'
 const FIT_HEIGHT = 2.6
 
 type Status = 'loading' | 'ready' | 'error'
-interface Stage { camera: THREE.PerspectiveCamera; pivot: THREE.Group; markers: THREE.Group; render: () => void }
-/** Where the backend's body_marker is drawn, in the fitted model's space (front is +z). Display only. */
-const MARKER_POINTS: Record<string, [number, number, number][]> = {
-  head: [[0, 1.1, 0.24]], chest: [[0.04, 0.64, 0.3]], lungs: [[-0.15, 0.66, 0.27], [0.15, 0.66, 0.27]],
-}
-const MARKER_COLORS: Record<string, number> = { normal: 0x9fe4cd, watch: 0xffcf90, action: 0xffadb9, unavailable: 0xc0d0dc }
-export interface BodyMarker { location: string; tone: keyof typeof MARKER_COLORS }
-
+interface Stage { camera: THREE.PerspectiveCamera; pivot: THREE.Group; health: AstronautHealth | null; render: () => void }
 function disposeTree(root: THREE.Object3D) {
   root.traverse(object => {
     const mesh = object as THREE.Mesh
@@ -30,7 +26,12 @@ function disposeTree(root: THREE.Object3D) {
   })
 }
 
-export default function Astronaut3D({ marker = null, onMarker }: { marker?: BodyMarker | null; onMarker?: () => void }) {
+export default function Astronaut3D({ signals, selected, onSelect }: { signals: HealthSignal[]; selected: string | null; onSelect: (id: string) => void }) {
+  const zones = useMemo(() => healthZones(signals), [signals])
+  const zonesRef = useRef(zones)
+  zonesRef.current = zones
+  const boxes = useRef(new Map<string, HTMLDivElement>())
+  const lines = useRef(new Map<string, SVGPolylineElement>())
   const canvas = useRef<HTMLCanvasElement>(null), drag = useRef<{ x: number; y: number } | null>(null), stage = useRef<Stage | null>(null)
   const press = useRef<{ x: number; y: number } | null>(null)
   const [angle, setAngle] = useState(-.3), [pitch, setPitch] = useState(0), [zoom, setZoom] = useState(1)
@@ -55,52 +56,53 @@ export default function Astronaut3D({ marker = null, onMarker }: { marker?: Body
     const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(2, 3, 4); scene.add(key)
     const rim = new THREE.DirectionalLight(0x8be3d0, .8); rim.position.set(-3, 1, -2); scene.add(rim)
     const pivot = new THREE.Group(); scene.add(pivot)
-    const markers = new THREE.Group(); markers.renderOrder = 10; pivot.add(markers)
-    const render = () => renderer.render(scene, camera)
+    const render = () => {
+      scene.updateMatrixWorld(true)
+      camera.updateMatrixWorld(true)
+      stage.current?.health?.update(camera, el.clientWidth, el.clientHeight, boxes.current, lines.current)
+      renderer.render(scene, camera)
+    }
     const resize = () => {
       const w = el.clientWidth, h = el.clientHeight
       if (!w || !h) return
       renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render()
     }
     const observer = new ResizeObserver(resize); observer.observe(el)
-    stage.current = { camera, pivot, markers, render }
+    stage.current = { camera, pivot, health: null, render }
     new FBXLoader().load(MODEL_URL, model => {
       if (disposed) { disposeTree(model); return }
       const box = new THREE.Box3().setFromObject(model)
       const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3())
       model.position.sub(center)
       const holder = new THREE.Group(); holder.add(model); holder.scale.setScalar(FIT_HEIGHT / (size.y || 1))
-      pivot.add(holder); setStatus('ready'); resize()
+      pivot.add(holder)
+      if (stage.current) {
+        stage.current.health = new AstronautHealth(model, pivot)
+        stage.current.health.setZones(zonesRef.current)
+      }
+      setStatus('ready'); resize()
     }, undefined, () => {
       if (disposed) return
       setStatus('error'); setProblem('The 3D model could not be loaded (models/astronaut/astronaut.fbx).')
     })
     resize()
-    return () => { disposed = true; observer.disconnect(); stage.current = null; disposeTree(scene); renderer.dispose() }
+    return () => { disposed = true; observer.disconnect(); stage.current?.health?.dispose(); stage.current = null; disposeTree(scene); renderer.dispose() }
   }, [])
 
-  // Draw the marker only where the backend's body_marker says; no marker means no location is invented.
   useEffect(() => {
     const current = stage.current
-    if (!current) return
-    disposeTree(current.markers); current.markers.clear()
-    const points = marker ? MARKER_POINTS[marker.location] : undefined
-    if (marker && points) for (const [x, y, z] of points) {
-      const color = MARKER_COLORS[marker.tone]
-      for (const [radius, opacity] of [[0.05, 1], [0.1, 0.3]] as const) {
-        const dot = new THREE.Mesh(new THREE.SphereGeometry(radius, 24, 16), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthTest: false }))
-        dot.position.set(x, y, z); dot.renderOrder = 10; current.markers.add(dot)
-      }
-    }
+    if (!current?.health) return
+    current.health.setZones(zones)
     current.render()
-  }, [marker, status])
+  }, [zones, status])
 
   function clickMarker(e: React.PointerEvent<HTMLCanvasElement>) {
     const start = press.current, current = stage.current; press.current = null
-    if (!start || !current || !onMarker || !current.markers.children.length || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6) return
+    if (!start || !current || !current.health || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6) return
     const box = e.currentTarget.getBoundingClientRect(), ray = new THREE.Raycaster()
     ray.setFromCamera(new THREE.Vector2((e.clientX - box.left) / box.width * 2 - 1, -((e.clientY - box.top) / box.height) * 2 + 1), current.camera)
-    if (ray.intersectObjects(current.markers.children).length) onMarker()
+    const id = current.health.hit(ray)
+    if (id) onSelect(id)
   }
 
   useEffect(() => {
@@ -114,13 +116,23 @@ export default function Astronaut3D({ marker = null, onMarker }: { marker?: Body
   const views = [['Front', 0], ['Left side', Math.PI / 2], ['Back', Math.PI], ['Right side', -Math.PI / 2]] as const
   return <><div className="astronaut-presets" aria-label="Body viewing angle">{views.map(([label, value]) => <button key={label} aria-pressed={Math.abs(angle - value) < .01} onClick={() => { setAngle(value); setPitch(0) }}>{label}</button>)}</div>
     <div className="astronaut-stage"><div className="astronaut-orbit"/>
-      <canvas ref={canvas} role="img" aria-label={`Three-dimensional astronaut model. Drag to rotate, or use arrow keys and view buttons.${marker ? ` A ${marker.location} marker shows the latest check-in finding; the evidence button below opens it.` : ' No body marker for the latest check-in.'}`} tabIndex={0}
+      <canvas ref={canvas} role="img" aria-label="Three-dimensional astronaut with bone-attached health auras. Drag to rotate. Arrow keys and the metric callout buttons are supported." tabIndex={0}
         onPointerDown={e => { drag.current = { x: e.clientX, y: e.clientY }; press.current = { x: e.clientX, y: e.clientY }; e.currentTarget.setPointerCapture(e.pointerId) }}
         onPointerMove={e => { const last = drag.current; if (!last) return; const dx = e.clientX - last.x, dy = e.clientY - last.y; drag.current = { x: e.clientX, y: e.clientY }; setAngle(a => a + dx * .012); setPitch(p => Math.max(-.5, Math.min(.5, p + dy * .006))) }}
         onPointerUp={e => { drag.current = null; clickMarker(e) }} onPointerCancel={() => { drag.current = null; press.current = null }}
         onKeyDown={e => { if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); const k = e.key; if (k === 'ArrowLeft' || k === 'ArrowRight') setAngle(a => a + (k === 'ArrowLeft' ? -.15 : .15)); else setPitch(p => Math.max(-.5, Math.min(.5, p + (k === 'ArrowUp' ? -.1 : .1)))) } }}/>
       {status !== 'ready' && <p className="astronaut-stage-label" role={status === 'error' ? 'alert' : 'status'} style={{ top: '50%', left: 0, right: 0, textAlign: 'center' }}>{status === 'loading' ? 'Loading 3D model…' : problem}</p>}
-      <span className="astronaut-stage-label">360° / SPATIAL VIEW</span></div>
+      <span className="astronaut-stage-label">360° / HEALTH VIEW</span>
+      <div className="health-callouts" hidden={status !== 'ready'}>
+        <svg className="health-leaders" width="100%" height="100%" aria-hidden="true">{zones.map(zone => <polyline key={zone.location} ref={node => { if (node) lines.current.set(zone.location, node); else lines.current.delete(zone.location) }} fill="none" stroke={HEALTH_COLORS[zone.tone]} strokeWidth="1.2" />)}</svg>
+        {zones.map(zone => <div key={zone.location} className="health-callout" data-location={zone.location} data-tone={zone.tone} style={{ '--health-color': HEALTH_COLORS[zone.tone] } as CSSProperties} ref={node => { if (node) boxes.current.set(zone.location, node); else boxes.current.delete(zone.location) }}>
+          <span className="health-callout-title">{zone.location === 'chest' ? 'Cardiovascular' : zone.location === 'lungs' ? 'Respiratory' : 'Wellbeing'}</span>
+          {zone.signals.map(signal => <button key={signal.id} data-tone={signal.tone} aria-pressed={selected === signal.id} onClick={() => onSelect(signal.id)}>
+            <span className="health-metric-name">{signal.label}<strong>{signal.value}</strong></span>
+            <span className="health-metric-status" style={{ color: HEALTH_COLORS[signal.tone] }}>{signal.message}</span>
+          </button>)}
+        </div>)}
+      </div></div>
     <div className="astronaut-toolbar"><span>Drag to rotate · Arrow keys supported</span><button aria-label="Zoom out" disabled={zoom <= .8} onClick={() => setZoom(z => Math.max(.8, z - .1))}>−</button><button aria-label="Zoom in" disabled={zoom >= 1.3} onClick={() => setZoom(z => Math.min(1.3, z + .1))}>+</button><button onClick={() => { setAngle(-.3); setPitch(0); setZoom(1) }}>Reset</button></div>
     <p className="astronaut-credit" style={{ fontSize: 11, textAlign: 'center', margin: '0 0 12px', color: '#c4d6e1' }}>Model: <a href={MODEL_SOURCE} target="_blank" rel="noopener noreferrer">“Astronaut” by Javi_DaviYT</a> (Sketchfab), <a href={LICENSE_URL} target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p></>
 }

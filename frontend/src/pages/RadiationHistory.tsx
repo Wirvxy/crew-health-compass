@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import RadiationChart from '../components/RadiationChart'
+import RadiationRangeSummary from '../components/RadiationRangeSummary'
 import { may20Event, RadiationApiError, radiationTimeline, utcLabel, withSeparators } from '../services/radiation'
 import type { RadiationEvent, RadiationTimeline } from '../services/radiation'
 
@@ -60,6 +61,7 @@ export default function RadiationHistory({ active }: { active: boolean }) {
         : data.series.length === 0 ? <p className="nasa-muted">No readings in this date range.</p>
         : data.series.map(s => <div key={s.detector}>
             <h3>Detector {s.detector} · {data.unit} (rate)</h3>
+            <RadiationRangeSummary statistics={s.statistics} unit={data.unit} start={s.start_timestamp_utc} end={s.end_timestamp_utc} />
             <RadiationChart key={`${key}/${s.detector}`} points={s.observations} unit={data.unit} detector={s.detector} eventDate={ev?.event_date ?? null} peak={ev?.series.find(e => e.detector === s.detector)?.statistics.peak ?? null} logScale={logScale} />
           </div>)}
       <ul className="rad-legend"><li><span className="key-line" /> Recorded readings ({data?.observation_count.toLocaleString('en-US') ?? '…'} in range)</li><li><span className="key-band" /> May 20, 2024 event day</li><li><span className="key-gap" /> No readings for more than 3 hours</li><li><span className="key-end" /> End of the exported record</li></ul>

@@ -184,3 +184,45 @@ body::after{content:'';position:fixed;width:110vw;height:80vh;left:4vw;top:70vh;
 .rad-legend span{display:inline-block;width:16px;height:10px;margin-right:6px;vertical-align:middle;border-radius:2px}
 .rad-legend .key-line{height:0;border-top:2px solid #edf7fb;border-radius:0}.rad-legend .key-band{background:rgba(var(--accent-rgb),.35)}.rad-legend .key-gap{background:rgba(219,235,244,.18)}.rad-legend .key-end{height:0;border-top:2px dashed #c3d5df;border-radius:0}
 @media(max-width:600px){.rad-controls{flex-direction:column;align-items:stretch}.rad-range{flex-wrap:wrap}}
+/* Range summaries and assessment context use the existing panel palette. */
+.rad-range-summary{margin:16px 0 24px;padding:18px 22px;border:1px solid rgba(217,234,243,.25);border-radius:20px;background:rgba(214,235,246,.06)}
+.rad-range-summary h4{margin:0;font-size:15px;font-weight:500}.rad-range-summary .nasa-metrics dd{font-size:24px}.rad-range-summary>p:last-child{margin-bottom:0}
+.result-card details{font-size:11px;line-height:1.7}.result-card summary{color:#244c5d;font-size:11px}.result-card ul{padding-left:18px;overflow-wrap:anywhere}.assessment-draft-note{border-left:2px solid #244c5d;padding-left:10px}
+@media(max-width:600px){.rad-range-summary{padding:14px}.rad-range-summary .nasa-metrics{grid-template-columns:1fr}.rad-range-summary .nasa-metrics dd{font-size:22px}}
+/* Explicit option colors keep native dropdowns readable on Windows. */
+select option,select optgroup{background:#233b4a;color:#f2f7fa}
+.checkin-panel select option,.checkin-panel select optgroup{background:#eff4f5;color:#1a3442}
+select option:disabled{color:#a5b9c5}
+/* Assessment status uses text, an icon and a restrained color accent. */
+.assessment-card{--assessment-tone:#9bb0bf;display:block;padding:18px 20px;border:1px solid rgba(217,234,243,.25);border-left:3px solid var(--assessment-tone);border-radius:16px;background:rgba(13,30,41,.4)}
+.assessment-card[data-tone=normal],.marker-actions[data-tone=normal]{--assessment-tone:#43d9a3}
+.assessment-card[data-tone=watch],.marker-actions[data-tone=watch]{--assessment-tone:#ffbc55}
+.assessment-card[data-tone=action],.marker-actions[data-tone=action]{--assessment-tone:#ff5c6c}
+.assessment-card-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.assessment-card-heading .eyebrow{margin:0;color:#c0d0dc;font-size:9px}
+.assessment-card .status{--status:var(--assessment-tone);font-size:11px}
+.assessment-card>p{margin:12px 0;font-size:12px;line-height:1.75;color:#e4eef4}
+.assessment-card-meta{display:flex;gap:6px 16px;flex-wrap:wrap;border-top:1px solid rgba(217,234,243,.15);padding-top:10px;color:#b9cdd9;font-size:10px}
+.marker-actions{--assessment-tone:#9bb0bf;flex-direction:column;align-items:center;gap:8px}
+.marker-actions button{border-color:var(--assessment-tone);background:rgba(219,235,244,.07)}
+.marker-actions>span{font-size:10px;color:#c0d0dc}.marker-actions .status{--status:var(--assessment-tone);font-size:10px}
+/* Camera-facing labels project from bone-attached health regions. */
+.health-callouts{position:absolute;inset:0;pointer-events:none}
+.health-leaders{position:absolute;inset:0;overflow:visible;pointer-events:none}
+.health-callout{position:absolute;top:0;left:0;width:154px;padding:10px 11px;border:1px solid color-mix(in srgb,var(--health-color) 50%,transparent);border-radius:12px;background:rgba(13,30,41,.94);box-shadow:0 8px 24px #07182240;pointer-events:auto}
+.health-callout-title{display:block;color:#bcd0dd;font-size:9px;letter-spacing:1.1px;text-transform:uppercase;margin-bottom:7px}
+.health-callout button{display:block;width:100%;min-height:44px;background:transparent;border:0;border-radius:6px;text-align:left;padding:7px 0;color:#edf5fa;font-size:10px;line-height:1.5}
+.health-callout button+button{border-top:1px solid #93aab930}
+.health-callout button[aria-pressed=true]{background:#dcebf40c}
+.health-callout button:hover{background:#dcebf416}
+.health-metric-name{display:flex;flex-wrap:wrap;gap:2px 7px;justify-content:space-between}
+.health-metric-name strong{font-weight:600}
+.health-metric-status{display:block;font-size:9px;margin-top:2px}
+.health-callouts[hidden]{display:none}
+@media(max-width:600px){.astronaut-stage{height:620px}.health-callout{width:126px;padding:9px}.health-callout button{font-size:9px}.health-callout-title{font-size:8px}}
+@media(max-width:600px){
+  .astronaut-stage{height:830px}
+  .astronaut-stage canvas{height:500px}
+  .astronaut-orbit{bottom:350px}
+  .health-callout{width:calc(50% - 18px)}
+}

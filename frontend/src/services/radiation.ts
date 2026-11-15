@@ -46,6 +46,7 @@ export function radiationTimeline(range: { start?: string; end?: string }, signa
   const params = new URLSearchParams()
   if (range.start) params.set('start_date', range.start)
   if (range.end) params.set('end_date', range.end)
+  params.set('include_statistics', 'true')
   return get(`/timeline${params.size ? `?${params}` : ''}`, signal).then(check<RadiationTimeline>)
 }
 export const may20Event = (signal?: AbortSignal) => get('/events/may-20-2024', signal).then(check<RadiationEvent>)
