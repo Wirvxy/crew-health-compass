@@ -511,4 +511,8 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
   - API: 126 passed, as before.
   - `npm run build` passes.
   - No tracked file still names an old path, except older log entries and the dataset name; all 59 relative links in the 19 Markdown files resolve.
+- **Fresh-clone check:** the branch was cloned into a new folder. `git status` was clean, the radiation CSV hash was `d514a88f…`, and no old folder remained.
+  - The API was started with outbound networking disabled (loopback only). All three datasets loaded: radiation 5,971 readings, peak 8377.913 at 06:15:19; Mode 1 example unusual, chest; Mode 2 passport C001 R+45, 200.
+  - 30 Mode 1 and Mode 2 responses were byte-identical to an API still running the old folder layout.
+  - All four tabs worked in the browser against it, with no console errors.
 - **Human review:** None yet.
