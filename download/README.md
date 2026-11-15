@@ -15,4 +15,4 @@ Source data for **Mode 2 (NASA Biological Passport)**: blood serum measurements 
 
 What these files state about the study, and what is still unverified, is in the [root README](../README.md#data-and-provenance).
 
-**Owner:** B (*proposal*: see `AGENTS.md`). The unzipped metadata folder replaces the identical `.zip` that used to sit beside it.
+**Owner:** Ayman El Kerboubi (B, *proposal*: see `AGENTS.md`). The unzipped metadata folder replaces the identical `.zip` that used to sit beside it.
