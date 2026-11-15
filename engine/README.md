@@ -1,4 +1,18 @@
-# NASA Health Replay data ingestion
+# Crew Health Compass engine
+
+Person A's analytics. Everything uses the Python standard library and runs offline, except the optional M3 experiment, which needs scikit-learn. Each part has its own guide:
+
+| Part | Modules | Guide |
+|---|---|---|
+| Mode 2, A1–A3: OSD-575 ingestion, postflight comparison, trajectories | `nasa_ingestion.py`, `biomarker_analysis.py`, `trajectory_analysis.py` | this file (below) |
+| Mode 2, A4: biological passport | `biological_passport.py` | [BIOLOGICAL_PASSPORT.md](BIOLOGICAL_PASSPORT.md) |
+| Mode 1: synthetic data ingestion and contracts | `mode1_ingestion.py`, `mode1_contracts.py` | [MODE1_CONTRACT.md](MODE1_CONTRACT.md) |
+| Mode 1: M2 personal statistical detection (used by the API) | `mode1_detection.py` | [MODE1_DETECTION.md](MODE1_DETECTION.md) |
+| Mode 1: M3 Isolation Forest experiment (off in the API) | `mode1_ml.py`, `mode1_ml_evaluation.py` | [MODE1_ML.md](MODE1_ML.md) |
+
+JSON examples are in `biological_passport_examples/` and `mode1_examples/`. Tests are the `test_*.py` files: run `python -m unittest discover -s engine` from the repository root.
+
+## NASA OSD-575 ingestion (A1)
 
 The Phase A1 loader reads four transformed serum CSVs from [NASA OSD-575](https://osdr.nasa.gov/bio/repo/data/studies/OSD-575). It uses the Python standard library and runs offline.
 

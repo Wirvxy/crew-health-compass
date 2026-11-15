@@ -53,6 +53,9 @@ If the data is missing or unusable at startup:
 | 4 | `GET /datasets/osd575/astronauts/{crew_id}/postflight` | `panel` | `biomarker`, `visit` |
 | 5 | `GET /datasets/osd575/astronauts/{crew_id}/trajectory` (provisional) | `panel`, `biomarker` | none |
 | 6 | `GET /datasets/osd575/comparison` (provisional) | `panel`, `biomarker` | none |
+| 7 | `GET /datasets/osd575/astronauts/{crew_id}/passport` (A4) | `visit` (postflight, e.g. `R%2B45`) | none |
+
+Endpoint 7 returns A's biological passport unchanged. It is described in [mode1-api.md, section 5](mode1-api.md#5-mode-2-a4-biological-passport) and [engine/BIOLOGICAL_PASSPORT.md](../engine/BIOLOGICAL_PASSPORT.md).
 
 `crew_id` is `C001`–`C004`. `panel` is one of `cmp`, `eve_cardiovascular`, `eve_immune` or `alamar_immune`.
 

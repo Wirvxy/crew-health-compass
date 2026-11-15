@@ -369,3 +369,39 @@ The event requires a description of how AI tools were used. Every agent session 
   - Mode 1 history charts: the API exposes no per-reading history yet. It needs a public helper from A, or a new endpoint from D.
   - C's mock-only files are now unused but not deleted.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Repository structure cleanup
+
+- **Task:** D asked for a clean repository: no duplicate or dead files, no outdated READMEs, and a tidy branch list. D reported permission from A, B and C, and approved each removal and the branch deletions.
+- **Branches:**
+  - #21 (frontend) had been merged into its base branch after that base was already merged into `main`, so `main` lacked the frontend. PR #22 brings commit `c6762b2` to `main`.
+  - 13 remote branches fully merged into `main` were deleted, each checked with `git merge-base --is-ancestor` first.
+  - Kept: `main`, `engine-main` (A's working branch), `data` (B's unmerged work), and the two branches of #22 until it merges.
+- **Branch `d-repo-cleanup`, in four commits:**
+  1. **Removed:**
+     - the duplicate metadata `.zip` (byte-identical to the unzipped folder) and 5 empty `.gitkeep` files;
+     - frontend files nothing imports: the mock loader and its 4.9 MB fixture, the old SystemDetail, TrendChart and DatasetComparison, the unreachable muscle map with its data, licence files and CSS, and an unused SVG;
+     - `frontend/PLAN-CHECKPOINTS.md`.
+  2. **Fonts:** the 4 Inter weights moved from base64 in `index.css` (1.78 MB, now 47 KB) to font files, with the official OFL 1.1 licence from the Inter project's v4.0 release.
+  3. **Ignore rules and settings:**
+     - A focused `.gitignore` replaces the Python template; it ignores the same local files before and after.
+     - The duplicate `frontend/.gitignore` was removed.
+     - New `.env.example` and `frontend/.env.example`.
+  4. **Docs:**
+     - The root README is rewritten to match what is built.
+     - New READMEs for `frontend/` and `download/`.
+     - An overview table in `engine/README.md`.
+     - Passport row in `docs/osd575-api.md`, and updated open points in `docs/mode1-api.md`.
+     - `AGENTS.md`/`CLAUDE.md` now show the real folders, check commands and interfaces (both still identical).
+- **Checks (local, Windows):**
+  - Engine: 73 tests run, 5 skipped (M3 needs scikit-learn).
+  - Backend: 108 passed.
+  - `npm run build` passes.
+  - In the production build, the 4 Inter fonts load (HTTP 200) and the served licence notices open.
+  - Every relative link in the changed docs resolves.
+- **Not changed:**
+  - The data folders' paths (D chose to keep them).
+  - The rules themselves in `AGENTS.md`.
+  - B's `data` branch.
+  - The missing repository licence, which is a team decision.
+- **Human review:** None yet.
