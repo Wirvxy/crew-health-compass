@@ -570,3 +570,51 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
   - The earlier 50-check suite passes 49/49 (the Mars-ready check was removed).
 - **Not changed:** CI does not run `npm test` yet. The backend is unchanged.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · Crew profiles and separate workspaces
+
+- **Task:** D's brief: a dedicated start page and separate astronaut workspaces, with personal data enforced per astronaut on the server. D chose:
+  - no passwords and no email: click a profile, as on Netflix;
+  - store check-ins without adding them to the audit hash chain yet;
+  - keep baselines on the synthetic history;
+  - rename "Role view" to a display-density switch.
+- **Design reference:** D's `crew-health-compass-login-and-logo.zip` was opened safely (12 files, no unsafe paths) and only read.
+  - Its profile-picker idea was adapted.
+  - Its logo is the one already in the repository.
+  - Its crew photos and spacewalk picture were **not** added: their source and licence are unknown, and the spacewalk image carries poster text. The avatars are drawn icons.
+- **Backend:**
+  - `app/sessions.py`: profile sessions.
+    - The cookie is HttpOnly, SameSite=Strict and `Secure` per `CREW_HEALTH_COOKIE_SECURE`, and only its SHA-256 hash is stored.
+    - Sessions last 12 hours, and logout deletes them.
+    - Changes sent from another website are refused (`Sec-Fetch-Site`), and changes must be JSON.
+  - `app/storage.py`: `sessions`, `checkins` and `plan_marks` tables, one owner per row. The migration only adds tables, and its CLI reports what the database holds.
+  - `app/personal.py`: `/api/me/checkins`, `/api/me/plan` and `/api/me/plan/review`.
+  - `app/monitoring.py`:
+    - Both endpoints need a session.
+    - `/astronauts` lists only the signed-in astronaut.
+    - `/assess` refuses a check-in naming another astronaut (403), then stores the check-in and its assessment.
+  - `tests/conftest.py` gives every test its own database.
+- **Frontend:**
+  - Start page `ProfilePicker`, with an app shell that has session states.
+  - Every session gets a fresh workspace. Personal answers must carry the open profile's name (`X-Crew-Health-Profile`), and late answers are aborted.
+  - The session is re-checked on reload, focus, Back/Forward and changes in another tab (BroadcastChannel).
+  - The sidebar shows the signed-in name and Log out; the astronaut dropdown and the other crew's status chips were removed.
+  - "Plan for today" and the new "Recent check-ins" read the backend. `dailyPlanStore.ts` (browser storage) was removed.
+- **Migration:**
+  - There was no team database file (`api/crew_health.db` did not exist), so there was nothing to migrate.
+  - The old browser-only checklist key `crew-health-compass.plan-for-today.v1` came from an unauthenticated dropdown, so its ownership is ambiguous. It is not read, not migrated and not deleted.
+- **Checks (local, Edge via Playwright 1.64.1 outside the repository; isolated scratch databases; API network blocked):**
+  - pytest **205 passed** (53 new), engine OK, `npm test` 2/2, `npm run build` passes.
+  - Profile suite **16/16**:
+    - each profile opens on its Daily check-in, with error and loading states;
+    - signed out, the API gives 401 and nothing personal shows on screen;
+    - a check-in, its plan and Body & systems are seen by their owner only;
+    - crew IDs in the query, body or path are refused or ignored;
+    - logout ends the session and the old cookie fails;
+    - reload keeps the session; another tab switching profile, Back and a stale tab never show the previous profile; a late answer is dropped;
+    - both profiles see the same C001 R+1 glucose 90 / +12.67 and the same 5,971 radiation readings;
+    - no external requests; a 4-profile smoke test; 375 px layout; keyboard.
+  - Regression suites: 46/46 and 16/16 (adapted for profile sessions).
+  - D watched the login → check-in → logout → second profile flow in the built-in browser.
+- **Noticed, not changed:** Flight Engineer 1's synthetic rest history has zero spread (MAD 0) for heart rate and diastolic pressure, so its rest check-ins come back "Not assessed". This is engine and data behaviour, for A and B.
+- **Human review:** None yet.

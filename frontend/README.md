@@ -33,18 +33,19 @@ This checks TypeScript and builds the app into `dist/`. ESLint is not configured
 npm test
 ```
 
-This runs the "Plan for today" rules in `tests/` with Node's built-in test runner (Node 24; no extra dependency). CI does not run it yet.
+This runs the "Plan for today" day-rule tests in `tests/` with Node's built-in test runner (Node 24; no extra dependency). CI does not run it yet. The plan's progress rules run on the backend (`api/tests/test_personal.py`).
 
 ## Structure
 
 | Path | Contents |
 |---|---|
-| `src/App.tsx` | App shell: sidebar, shared page heading and the four pages; it opens on Daily check-in |
-| `src/pages/Dashboard.tsx` | Mode 1 state: check-in drafts, results and examples; records each assessed check-in for "Plan for today" |
+| `src/App.tsx` | Session states (checking, start page, workspace). Each profile session gets a fresh workspace (sidebar, shared heading, four pages), opening on Daily check-in. It re-checks the session on reload, focus, Back/Forward and when another tab changes it |
+| `src/pages/ProfilePicker.tsx` | Start page: click a crew profile (demo access control, no passwords) |
+| `src/pages/Dashboard.tsx` | The signed-in astronaut's Mode 1 workspace: draft, examples, latest result and saved history. Late answers are dropped when it closes |
 | `src/pages/RadiationHistory.tsx` | Mission Environment page: date range, radiation timeline, May 20 event card, limitations |
 | `src/pages/NasaDataset.tsx` | Mode 2 page: crew, panel, biomarker and visit selection, history chart, trajectories |
-| `src/components/` | `DailyCheckIn`, `BodyMap` and `Astronaut3D` (three.js viewer with the body marker), `MonitoringDetail` (evidence panel), `PassportSummary` (A4), `RadiationChart` (SVG timeline with gaps, event band, hover and drag-to-zoom), `PlanForToday` (daily checklist beside the check-in form), `Sidebar` (logo link and page list), `PageHeader`, `TopBar`, `DataNotes`, `StatusLabel` |
-| `src/services/` | `api.ts` (base URL), `monitoring.ts` (Mode 1 requests), `dataset.ts` and `datasetResponse.ts` (Mode 2 requests and shape checks), `radiation.ts` (Mission Environment requests), `report.ts` (local PDF export), `dailyPlan.ts` ("Plan for today" rules) and `dailyPlanStore.ts` (its progress, saved in the browser) |
+| `src/components/` | `DailyCheckIn`, `BodyMap` and `Astronaut3D` (three.js viewer with the body marker), `MonitoringDetail` (evidence panel), `PassportSummary` (A4), `RadiationChart` (SVG timeline with gaps, event band, hover and drag-to-zoom), `PlanForToday` (daily checklist beside the check-in form), `RecentCheckIns` (the profile's saved check-ins), `Brand` (logo link), `Sidebar` (page list, signed-in name, Log out), `PageHeader`, `TopBar`, `DataNotes`, `StatusLabel` |
+| `src/services/` | `api.ts` (base URL), `monitoring.ts` (Mode 1 requests), `dataset.ts` and `datasetResponse.ts` (Mode 2 requests and shape checks), `radiation.ts` (Mission Environment requests), `report.ts` (local PDF export), `session.ts` (profile sessions; every personal answer must name the open profile), `personal.ts` (saved check-ins and plan), `dailyPlan.ts` (the UTC day rule) |
 | `src/types/` | View-model and dataset types |
 | `src/assets/fonts/` | Inter font files |
 | `src/assets/brand/` | The logo, unchanged from the original PNG (see `NOTICE`) |
@@ -61,11 +62,11 @@ This runs the "Plan for today" rules in `tests/` with Node's built-in test runne
 - **Plan for today** (beside the check-in form):
   - Four tasks per astronaut: complete today's check-in, include sleep duration, include a mood, and review today's result.
   - The first three are done automatically, only after the backend has assessed a check-in, and the optional ones only when that check-in included the value. The last one is ticked by the user.
-  - Progress resets at 00:00 UTC by the computer's clock, also while the page is open. It is saved in this browser's `localStorage`: task flags and times only, never readings.
+  - Progress resets at 00:00 UTC by the computer's clock, also while the page is open. It is saved on the backend for the signed-in profile only; the browser stores nothing.
 - **Mode 2** (NASA lab data):
   - All values come from the `/datasets/osd575/...` endpoints. The page keeps decimal strings and nulls, converts numbers only for display, and shows gaps for missing readings.
   - The A4 passport labels "laboratory comparison unavailable" separately from missing readings.
 - **Mission Environment** (Mars Radiation History):
   - The chart draws the API's readings as they are: no interpolation. The line breaks where readings are more than 3 hours apart, and a dashed line marks where the export ends.
   - The event card reads every number from `/api/environment/radiation/events/may-20-2024`. The tab never affects a health status.
-- **Errors:** API failures show a message, never fallback data, and a page that cannot load offers Retry. Results stay in memory until the page is reloaded.
+- **Errors:** API failures show a message, never fallback data, and a page that cannot load offers Retry. Check-ins and results are saved per profile on the backend; drafts stay in memory until reload or logout.

@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 
 from app import monitoring
 from app.main import app
+from conftest import signed_in
 from engine.mode1_contracts import CHECK_IN_UNITS, validate_assessment
 
 URL = "/api/monitoring/assess"
@@ -40,10 +41,9 @@ def check_in(timestamp=AFTER_HISTORY, heart_rate="67", context="rest", **changes
 
 
 @pytest.fixture
-def client(monkeypatch):
-    monkeypatch.delenv(monitoring.DATA_ENV_VAR, raising=False)
-    with TestClient(app) as test_client:  # runs the startup step
-        yield test_client
+def client(app_client):
+    # The startup step has run; the checks are sent from the commander's profile session.
+    return signed_in(app_client, "commander")
 
 
 def assess_ok(client, body):
@@ -140,10 +140,11 @@ def test_bodies_that_are_not_a_json_object_are_422(client, content):
     assert isinstance(response.json()["detail"], str)
 
 
-def test_unknown_astronaut_is_422_and_lists_known_ids(client):
-    response = client.post(URL, json=check_in(astronaut_id="C001"))
-    assert response.status_code == 422
-    assert "commander" in response.json()["detail"]
+@pytest.mark.parametrize("other", ["flight_engineer_1", "C001"])
+def test_check_in_naming_another_astronaut_is_403(client, other):
+    response = client.post(URL, json=check_in(astronaut_id=other))
+    assert response.status_code == 403
+    assert "another astronaut" in response.json()["detail"]
 
 
 def test_numbers_keep_their_exact_digits(client):
@@ -247,11 +248,10 @@ def test_m3_isolation_forest_is_not_used(client):
     assert "sklearn" not in sys.modules
 
 
-def test_astronauts_endpoint_lists_roles_contexts_and_time_ranges(client):
+def test_astronauts_endpoint_lists_only_the_signed_in_astronaut(client):
     body = client.get("/api/monitoring/astronauts").json()
     assert body["data_origin"] == "synthetic" and body["provenance"] == "simulated"
-    assert [a["astronaut_id"] for a in body["astronauts"]] == [
-        "commander", "flight_engineer_1", "flight_engineer_2", "flight_engineer_3"]
+    assert [a["astronaut_id"] for a in body["astronauts"]] == ["commander"]
     assert "other" in body["manual_contexts"]
     for astronaut in body["astronauts"]:
         assert {h["activity_context"] for h in astronaut["history"]} == {
@@ -267,6 +267,7 @@ def test_history_is_loaded_once_at_startup(monkeypatch):
     monkeypatch.setattr(monitoring, "load_monitoring_data",
                         lambda *a, **k: calls.append(1) or original(*a, **k))
     with TestClient(app) as client:
+        signed_in(client, "commander")
         for _ in range(3):
             assess_ok(client, check_in())
     assert calls == [1]
@@ -276,8 +277,9 @@ def test_missing_history_gives_503_without_paths(monkeypatch, tmp_path):
     missing = tmp_path / "nowhere"
     monkeypatch.setenv(monitoring.DATA_ENV_VAR, str(missing))
     with TestClient(app) as client:
-        response = client.post(URL, json=check_in())
-        assert response.status_code == 503
+        assert client.post(URL, json=check_in()).status_code == 401  # no session
+        response = client.post("/api/session", json={"astronaut_id": "commander"})
+        assert response.status_code == 503  # the profiles come from the missing history
         assert str(tmp_path) not in response.text and "nowhere" not in response.text
         assert client.get("/health").status_code == 200
         assert client.get("/datasets/osd575/astronauts").status_code == 200

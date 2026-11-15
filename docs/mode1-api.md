@@ -15,6 +15,7 @@ api\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir api
 - **Base URL:** `http://127.0.0.1:8000`. Interactive docs are at `http://127.0.0.1:8000/docs`.
 - **Startup:** loads Person B's synthetic history (`data/mode1/`) and the NASA OSD-575 files (`data/mode2/`) once.
 - **Offline:** everything comes from local files. Nothing is downloaded, and no external AI service is called.
+- **Profiles:** personal endpoints need a profile session (section 4a). In the browser, the start page opens it.
 
 ## 2. Calling it from the frontend
 
@@ -25,8 +26,13 @@ Use relative paths such as `fetch('/api/monitoring/assess')`. In development, Vi
 | Method | Path | What it returns | Status |
 |---|---|---|---|
 | GET | `/health` | `{"status": "ok"}` while the server runs | existing |
-| GET | `/api/monitoring/astronauts` | Synthetic crew IDs, contexts, and the time range of each history | **new** |
-| POST | `/api/monitoring/assess` | Mode 1 statistical assessment of one manual check-in | **new** |
+| GET | `/api/profiles` | The four crew profiles a session can be opened for | **new**, no session |
+| GET, POST, DELETE | `/api/session` | Which profile this browser has; open a profile; log out | **new** |
+| GET | `/api/monitoring/astronauts` | The signed-in astronaut's contexts and the time range of each history | session |
+| POST | `/api/monitoring/assess` | Mode 1 statistical assessment of one manual check-in, stored for its astronaut | session |
+| GET | `/api/me/checkins?limit=10` | The signed-in astronaut's stored check-ins and assessments, newest first | **new**, session |
+| GET | `/api/me/plan?day=YYYY-MM-DD` | The signed-in astronaut's "Plan for today" for that UTC day | **new**, session |
+| PUT | `/api/me/plan/review` | Tick or untick "Review today's result": `{"day": "YYYY-MM-DD", "done": true}` | **new**, session |
 | GET | `/datasets/osd575/astronauts` | NASA crew IDs and visits | existing (A1) |
 | GET | `/datasets/osd575/panels` | Panels, biomarkers and units | existing (A1) |
 | GET | `/datasets/osd575/astronauts/{crew_id}/measurements?panel=&biomarker=` | Recorded values | existing (A1) |
@@ -37,6 +43,15 @@ Use relative paths such as `fetch('/api/monitoring/assess')`. In development, Vi
 
 The passport uses the crew-path form to match the four existing crew endpoints.
 
+## 4a. Profile sessions (demo access control)
+
+There are no passwords, by the team's choice. `POST /api/session` with `{"astronaut_id": "commander"}` opens a session for one of the four profiles that `GET /api/profiles` lists. The answer sets a cookie `chc_session` (HttpOnly, SameSite=Strict, Path=/, 12 hours); the browser sends it back by itself, so the frontend never handles it. `GET /api/session` answers `{"profile": {...}}`, or `{"profile": null}` when signed out. `DELETE /api/session` logs out: the server forgets the session.
+
+- **Ownership:** every personal endpoint takes the astronaut from the session. No endpoint takes an astronaut ID from the URL or query, and a check-in that names another astronaut is refused (403).
+- **Answers:** personal answers carry `Cache-Control: no-store` and the header `X-Crew-Health-Profile`, so the frontend can drop an answer meant for another profile.
+- **Other websites:** data changes need JSON, and a browser request marked `Sec-Fetch-Site: cross-site` or `same-site` is refused (403).
+- **Limits:** anyone using the computer can open any profile. This keeps the four workspaces apart; it does not prove who someone is.
+
 ## 4. Mode 1: assess a manual check-in
 
 ### Request
@@ -45,7 +60,7 @@ The passport uses the crew-path form to match the four existing crew endpoints.
 
 | Field | Required | Format |
 |---|---|---|
-| `astronaut_id` | yes | `commander`, `flight_engineer_1`, `flight_engineer_2` or `flight_engineer_3` |
+| `astronaut_id` | yes | The signed-in profile: `commander`, `flight_engineer_1`, `flight_engineer_2` or `flight_engineer_3`. Another ID is refused (403) |
 | `timestamp` | yes | ISO 8601 with a UTC offset, for example `2030-06-30T13:30:00Z` |
 | `activity_context` | yes | `rest`, `exercise`, `recovery`, `morning_check`, `inflight_vitals_check` or `other` |
 | `indicators.heart_rate` | yes | `{"value": "72", "unit": "bpm"}` |
@@ -118,6 +133,8 @@ Errors from the new endpoints have one shape, `{"detail": "<message>"}`. [Real e
 
 | Status | When |
 |---|---|
+| 401 | No profile session (signed out, logged out, or the 12 hours ran out). |
+| 403 | A check-in naming another astronaut than the session's, or a change sent from another website. |
 | 415 | The check-in was not sent as JSON (`Content-Type: application/json`). |
 | 422 | Invalid check-in. The message starts with `Invalid check-in:` and then gives the reason from A's validator or the API's checks. |
 | 404 | Unknown NASA crew, or a visit that is not postflight. The message lists the valid visits. |
@@ -130,5 +147,6 @@ Exception: when a required query parameter is missing on a GET endpoint (for exa
 - **For A:** the contract accepts only `data_origin: "user"`, so a check-in filled with the frontend's example values is labelled as user data. How should simulated demo entries be marked?
 - **For A:** value errors say "Expected a finite decimal value" without naming the field. Unit errors do name it.
 - **For A or D:** the Mode 1 history chart needs the individual earlier readings, which the API does not return yet.
-- **Storage:** check-ins are assessed but not stored, and they are not yet in the audit hash chain.
+- **Storage:** each assessed check-in is stored with its assessment for its astronaut only (`api/app/storage.py`). It is not in the audit hash chain yet, and it does not change the baseline: A's engine still compares every check-in with the synthetic history.
+- **For A:** a stored check-in does not record whether it used the frontend's example values (same open point as `data_origin`).
 - **For B:** plausible physiological ranges (for example the highest heart rate a check-in may report) need a cited source in `catalogue/indicators.yaml`. Until then, only the format and logic checks above apply, and the "data problem" result is not defined.

@@ -10,8 +10,11 @@ This is the backend foundation: a FastAPI app with a liveness endpoint, a SQLite
 | `app/osd575.py` | Read-only `/datasets/osd575/...` endpoints built on A's `engine/`: astronauts, panels, measurements, postflight, trajectory, comparison and the A4 passport (see [docs/osd575-api.md](../docs/osd575-api.md)) |
 | `app/monitoring.py` | Mode 1: `GET /api/monitoring/astronauts` and `POST /api/monitoring/assess`, built on A's M2 statistical detection and B's synthetic history (see [docs/mode1-api.md](../docs/mode1-api.md)) |
 | `app/checkin_checks.py` | Format and logic checks that the API adds to a Mode 1 check-in. They are not medical limits |
+| `app/sessions.py` | Demo access control: `GET /api/profiles`, and `/api/session` to open a profile, check it and log out. No passwords |
+| `app/personal.py` | The signed-in astronaut's own data: `GET /api/me/checkins`, `GET /api/me/plan`, `PUT /api/me/plan/review` |
+| `app/storage.py` | Tables for sessions, stored check-ins and plan marks, each row with one owner, and their migration (`python -m app.storage`) |
 | `app/radiation.py` | Mission Environment: `GET /api/environment/radiation/timeline` and `GET /api/environment/radiation/events/may-20-2024`, built on A's R1 radiation history engine (see [docs/radiation-api.md](../docs/radiation-api.md)) |
-| `tests/` | pytest tests. Database tests use temporary databases; OSD-575 tests read `data/mode2/` |
+| `tests/` | pytest tests. Every test gets its own temporary database (`tests/conftest.py`); OSD-575 tests read `data/mode2/` |
 | `requirements.txt` | Runtime dependencies, pinned |
 | `requirements-dev.txt` | Runtime and test dependencies, pinned |
 | `pytest.ini` | Tells pytest where the tests and the code are |
@@ -38,7 +41,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Expected result: `152 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
+Expected result: `205 passed`, plus one Starlette deprecation warning (see [Known issues](#known-issues)). `pytest.ini` adds the repository root to the import path, so the tests can import A's `engine/`.
 
 A's engine has its own `unittest` suite (78 tests; 5 are skipped unless the optional scikit-learn for the disabled M3 experiment is installed). Run it from the repository root:
 
@@ -81,6 +84,7 @@ Expected result: a `status` column showing `ok`. Press Ctrl+C in the first windo
 | `CREW_HEALTH_OSD575_DIR` | Folder holding the four OSD-575 `*_TRANSFORMED.csv` files | the repository's `data/mode2/` |
 | `CREW_HEALTH_MODE1_DATA` | Folder or ZIP holding B's synthetic `iss-synthetic-3000` dataset | the repository's `data/mode1/` |
 | `CREW_HEALTH_RAD_CSV` | The Curiosity RAD radiation CSV (Mission Environment) | `data/radiation/nasa_curiosity_rad_2024-03-07_to_2024-05-20.csv` |
+| `CREW_HEALTH_COOKIE_SECURE` | Whether the session cookie is sent over HTTPS only: `auto`, `true` or `false` | `auto`: Secure when the request arrived over HTTPS. Set `true` behind an HTTPS proxy that forwards plain HTTP; keep `auto` or `false` for local HTTP |
 
 To set it for the current PowerShell window, run `$env:CREW_HEALTH_DB_PATH = "C:\path\to\crew_health.db"`. The folder must already exist. The tests check that the path is read from this variable.
 
@@ -145,14 +149,24 @@ To try it, launch the server with `CREW_HEALTH_DB_PATH` pointing at a test datab
   - `pip freeze` leaves out pip, setuptools and wheel. Those are install tools, not app dependencies, and are not audited.
 - **Telemetry:** FastAPI 0.162.7 installs `opentelemetry-api`. It can export data only when `FASTAPI_OTEL_AUTO_CONFIGURE=true` and an export endpoint are set *and* the OpenTelemetry SDK and exporter packages are installed. None of these are present, so nothing is sent.
 
+## Profiles, storage and migration
+
+- **Profiles:** the four crew roles of the synthetic history (`data/mode1/`). Nothing needs to be created: there are no passwords and no secret keys.
+- **Storage:** the SQLite file in `CREW_HEALTH_DB_PATH` holds the audit chain (`records`) plus `sessions`, `checkins` and `plan_marks`. Every personal row has one owner, `astronaut_id`.
+- **Migration:** the app creates any missing table at startup. It never drops, rewrites or reassigns rows. To run it by hand and see what the database holds, from `api/`: `.venv\Scripts\python.exe -m app.storage`. Existing `records` rows have no owner, so they are left as they are and shown to nobody.
+- **Deployment (Docker):**
+  - Serve the frontend and the API from one origin: a reverse proxy sends `/api` and `/datasets` to uvicorn, as Vite's dev proxy does. The session cookie is SameSite=Strict and the API sets no CORS headers, so a frontend on another origin cannot use it.
+  - Behind HTTPS, set `CREW_HEALTH_COOKIE_SECURE=true`.
+  - Put `CREW_HEALTH_DB_PATH` on a volume so stored check-ins survive a container restart.
+
 ## Known issues
 
 - Starlette 1.10 warns that using `httpx` with its test client is deprecated, and suggests `httpx2`. The tests still pass. Switching would add a new dependency, which should be checked first.
 
 ## Not built yet (on purpose)
 
-- Storing check-ins, and the status, history, catalogue, report and demo endpoints. These wait for the contracts at G1. The Mode 1 assessment works without storage, and the OSD-575 endpoints are separate.
-- Measurement tables, demo access control, plausibility checks, encryption and report signing.
+- The status, catalogue, report and demo endpoints. These wait for the contracts at G1.
+- A flight-surgeon role, physiological plausibility ranges, encryption and report signing.
 - Protection for the audit chain's latest hash (an outside copy or a signature).
-- Python linting (ruff) in CI, and deployment (Docker).
+- Python linting (ruff) in CI, and the Docker files themselves (see the deployment notes above).
 - Instructions verified on macOS or Linux. On those systems, `.venv/bin/python` should replace `.\.venv\Scripts\python.exe`, but this has not been tested.
