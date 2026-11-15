@@ -1,0 +1,23 @@
+{
+  "invalid_date": {
+    "request": "GET /api/environment/radiation/timeline?start_date=2024/05/20",
+    "status": 422,
+    "body": {
+      "detail": "Invalid date filter: Date filter must use YYYY-MM-DD"
+    }
+  },
+  "start_after_end": {
+    "request": "GET /api/environment/radiation/timeline?start_date=2024-05-21&end_date=2024-05-20",
+    "status": 422,
+    "body": {
+      "detail": "Invalid date filter: start_date must be on or before end_date"
+    }
+  },
+  "unknown_detector": {
+    "request": "GET /api/environment/radiation/timeline?detector=Z",
+    "status": 404,
+    "body": {
+      "detail": "Unknown detector 'Z'. Available detectors: E."
+    }
+  }
+}

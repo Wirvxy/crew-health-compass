@@ -15,7 +15,7 @@ Items marked ***Proposal*** were suggested by D and the team has not agreed to t
 | Member | Name | Role | Owns | Usual agent |
 |---|---|---|---|---|
 | A | Iliass Barrou | Tech lead, analytics engine | `engine/` | Codex |
-| B | Ayman El Kerboubi | Data, health science, evaluation | `iss-synthetic-3000/` | Codex |
+| B | Ayman El Kerboubi | Data, health science, evaluation | `iss-synthetic-3000/`, `raw data/` | Codex |
 | C | Taha Errassif | Frontend and UX | `frontend/` | Codex |
 | D | Monssif El Haouari | Backend, security, data integrity, release | `api/`, `.github/` (CI), deployment | Claude Code |
 
@@ -77,6 +77,9 @@ A owns the engine contracts and D owns the API. Change them only through a PR la
 - **Mode 2, NASA Biological Passport** (real NASA OSD-575 data):
   - Engine: `engine/nasa_ingestion.py` (A1), `biomarker_analysis.py` (A2), `trajectory_analysis.py` (A3) and `biological_passport.py` (A4). Guides: `engine/README.md` and `engine/BIOLOGICAL_PASSPORT.md`.
   - API: read-only `GET /datasets/osd575/...` endpoints, including `/astronauts/{crew_id}/passport?visit=`. Guide: `docs/osd575-api.md`.
+- **Mission Environment** (real NASA Curiosity RAD data, historical, not used for any health status):
+  - Engine: `load_radiation_history()`, `radiation_timeline()` and `may_20_event_summary()` in `engine/radiation_history.py`. Guide: `engine/RADIATION_HISTORY.md`.
+  - API: `GET /api/environment/radiation/timeline` and `GET /api/environment/radiation/events/may-20-2024`. Guide: `docs/radiation-api.md`.
 - **Audit:** `GET /audit/verify` checks the hash chain. Its response shape is provisional.
 - **Errors:** `{"detail": "<message>"}` with 422 for invalid input, 404 for an unknown crew or visit, and 503 when a dataset is not loaded.
 - **`provenance` values:** `user`, `simulated`, `dataset:<name>`. Mode 1 calls the field `data_origin`: `user` for check-ins and `synthetic` for its history.

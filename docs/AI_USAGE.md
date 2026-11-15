@@ -425,3 +425,26 @@ Team members: A = Iliass Barrou, B = Ayman El Kerboubi, C = Taha Errassif, D = M
   - The 3D model's original creator is unverified, and the Space Apps terms exclude material the team has no rights to.
   - The OSD-575 terms of use still need B's check.
 - **Human review:** None yet.
+
+## 2026-11-15 · Member D · Claude Code · R1 radiation history API (Mission Environment)
+
+- **Task:** the R1 backend brief: serve Iliass Barrou's radiation history engine through FastAPI without changing Mode 1 or Mode 2. Monssif El Haouari reported permission from the whole team.
+- **Branch:** `d-radiation-api`, from `main` at `49c0f69`.
+- **Engine:** Iliass's `engine-main` commit `56875db` was merged unchanged; its 3 radiation files are byte-identical.
+- **Data:**
+  - Iliass had already committed the CSV to `main` at the engine's default path, so no second copy was added.
+  - Its data is identical to Ayman El Kerboubi's export (closed PR #18) and to the file Monssif supplied.
+  - The file is now stored byte-for-byte (`.gitattributes` `-text`), so the SHA-256 the API reports is `d514a88f…` on every computer, as in `engine/RADIATION_HISTORY.md`.
+  - A README was added for the data folder.
+- **API (`api/app/radiation.py`):**
+  - Loads the CSV once at startup, with the path passed explicitly (`CREW_HEALTH_RAD_CSV` overrides it).
+  - `GET /api/environment/radiation/timeline` and `GET /api/environment/radiation/events/may-20-2024` return the engine's dictionaries unchanged.
+  - Errors: 422 for bad dates, 404 for an unknown detector, 503 without server paths when the CSV is missing or unreadable.
+- **Docs:**
+  - New `docs/radiation-api.md` for Taha Errassif, with real example responses in `docs/examples/radiation/`.
+  - Updated: the API README, `.env.example`, the root README, NOTICE (dataset citation), the engine README table, and `AGENTS.md`/`CLAUDE.md` section 4.
+- **Checks (local, Windows):**
+  - Backend: 126 passed (108 existing, 18 new).
+  - Engine: 78 run, OK, 5 skipped (M3 needs scikit-learn). Iliass's real-data radiation test ran.
+  - Values match the brief: May 20 peak 8377.913 µGy/day at 06:15:19 UTC, median 1153.6759, May 13–19 median 148.34653, ratio 7.7768.
+- **Human review:** None yet.
